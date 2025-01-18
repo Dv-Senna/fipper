@@ -30,3 +30,19 @@
 *.exe
 *.out
 *.app
+
+# Build folder
+build/*
+
+# IDEs
+.vscode/*
+.cache/*
+.clangd
+
+# scripts
+*.sh
+*.bat
+*.ps1
+!scripts/*.sh
+!scripts/*.bat
+!scripts/*.ps1
