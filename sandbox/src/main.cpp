@@ -1,70 +1,33 @@
+#include <cerrno>
+#include <cstring>
 #include <print>
 #include <ranges>
 
+#include <fp/socket.hpp>
 #include <fp/utils/enums.hpp>
 
-
-enum class Color {
-	eRed = 0xff0000,
-	eGreen = 0x00ff00,
-	eBlue = 0x0000ff
-};
-
-enum class Component {
-	cpu = 1 << 0,
-	gpu = 1 << 1,
-	psu = 1 << 6,
-	mobo = 1 << 10,
-	wifi = 1 << 15
-};
-
-FP_SET_ENUM_TAG(Component, "");
-FP_MAKE_ENUM_FLAG(Component);
-FP_SET_ENUM_MAX_INDEX(Color, 255);
-
-template <std::size_t index>
-struct fp::utils::EnumValueConstructor<Color, index> {
-	static constexpr auto func {[](size_t index2) -> Color {
-		std::underlying_type_t<Color> color {};
-		std::underlying_type_t<Color> mask {0xf};
-		for (const auto i : std::views::iota(std::size_t{0}, std::size_t{8})) {
-			std::size_t current {std::size_t{0b10} << i};
-			std::size_t last {current >> 1};
-			if ((index2 % current) >= last)
-				color |= mask;
-			mask <<= 4;
-		}
-		return static_cast<Color> (color);
-	}};
-};
-
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 
 int main() {
-	static_assert(fp::utils::HasEnumTag<Color>);
-	static_assert(!fp::utils::HasEnumTag<Component>);
+	fp::Socket socket {};
+	if (socket.create({.port = 1242}) != fp::Result::eSuccess) {
+		std::println("Can't create socket : {}", errno);
+		return 1;
+	}
 
-	constexpr auto valueOfColor {fp::utils::EnumValueFinder_v<Color>};
-	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfColor)>);
-	std::println("Color <0> : {}", fp::utils::toString<Color, std::get<0> (valueOfColor)> ().value_or("invalid"));
-	std::println("Color <1> : {}", fp::utils::toString<Color, std::get<1> (valueOfColor)> ().value_or("invalid"));
-//	std::println("Color <2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
+	if (listen(socket.getSocket(), 5) != 0) {
+		std::println("Can't listen : {}", errno);
+		return 1;
+	}
 
-	constexpr auto valueOfComponent {fp::utils::EnumValueFinder_v<Component>};
-	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfComponent)>);
-	std::println("Component <0> : {}", fp::utils::toString<Component, std::get<0> (valueOfComponent)> ().value_or("invalid"));
-	std::println("Component <1> : {}", fp::utils::toString<Component, std::get<1> (valueOfComponent)> ().value_or("invalid"));
-	std::println("Component <2> : {}", fp::utils::toString<Component, std::get<2> (valueOfComponent)> ().value_or("invalid"));
-	std::println("Component <3> : {}", fp::utils::toString<Component, std::get<3> (valueOfComponent)> ().value_or("invalid"));
-	std::println("Component <4> : {}", fp::utils::toString<Component, std::get<4> (valueOfComponent)> ().value_or("invalid"));
+	int clientSocket {accept(socket.getSocket(), nullptr, nullptr)};
 
-	std::println("comp cpu : '{}'", fp::utils::toString<Component, Component::cpu> ().value_or("invalid"));
-	std::println("comp invalid : '{}'", fp::utils::toString<Color, (Color)1> ().value_or("invalid"));
-
-	std::println("eRed : '{}'", fp::utils::toString<Color> (Color::eRed));
-	std::println("invalid : '{}'", fp::utils::toString<Color> ((Color)1));
-
-	std::println("cpu : '{}'", fp::utils::toString<Component> (Component::cpu));
+	const char *msg {"Hello from fipper !"};
+	send(clientSocket, msg, strlen(msg), 0);
 
 	return 0;
 }

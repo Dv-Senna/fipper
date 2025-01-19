@@ -1,10 +1,10 @@
 #pragma once
 
 
-namespace pf {
+namespace fp {
 	enum class Result {
-		eSuccess = 1,
+		eSuccess = 0,
 		eFailure
 	};
 
-} // namespace pf
+} // namespace fp

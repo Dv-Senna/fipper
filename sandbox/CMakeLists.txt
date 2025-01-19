@@ -42,6 +42,7 @@ target_link_libraries(
 
 
 if (WIN32)
+	add_compile_definitions(${PROJECT_ACRONYM_UPPERCASE}_WINDOWS)
 	add_compile_definitions(${SANDBOX_NAME_UPPERCASE}_WINDOWS)
 	if (BUILD_STATIC)
 	else()
@@ -57,8 +58,10 @@ if (WIN32)
 		)
 	endif()
 elseif (UNIX)
+	add_compile_definitions(${PROJECT_ACRONYM_UPPERCASE}_LINUX)
 	add_compile_definitions(${SANDBOX_NAME_UPPERCASE}_LINUX)
 elseif (APPLE)
+	add_compile_definitions(${PROJECT_ACRONYM_UPPERCASE}_APPLE)
 	add_compile_definitions(${SANDBOX_NAME_UPPERCASE}_APPLE)
 else()
 	message(FATAL_ERROR "Platforms other than Windows, Linux and MacOS aren't supported for now")
