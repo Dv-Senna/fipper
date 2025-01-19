@@ -4,9 +4,9 @@
 
 
 enum class Color {
-	eRed = 0xff0000,
-	eGreen = 0x00ff00,
-	eBlue = 0x0000ff
+	eRed = 10,// = 0xff0000,
+	eGreen,// = 0x00ff00,
+	eBlue// = 0x0000ff
 };
 
 enum class Color2 {
@@ -25,6 +25,12 @@ struct fp::utils::EnumTag<Color2> {
 int main() {
 	static_assert(fp::utils::HasEnumTag<Color>);
 	static_assert(!fp::utils::HasEnumTag<Color2>);
+
+	constexpr auto valueOfColor {fp::utils::EnumValueFinder_v<Color>};
+	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfColor)>);
+	std::println("<0> : {}", fp::utils::toString<Color, std::get<0> (valueOfColor)> ().value_or("invalid"));
+	std::println("<1> : {}", fp::utils::toString<Color, std::get<1> (valueOfColor)> ().value_or("invalid"));
+	std::println("<2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
 
 	std::println("comp eRed : '{}'", fp::utils::toString<Color, Color::eRed> ().value_or("invalid"));
 	std::println("comp invalid : '{}'", fp::utils::toString<Color, (Color)1> ().value_or("invalid"));
