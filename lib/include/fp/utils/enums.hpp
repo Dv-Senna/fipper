@@ -25,7 +25,20 @@ namespace fp::utils {
 
 	template <typename Enum>
 	concept HasEnumTag = IsEnum<Enum>
-		&& !EnumTag<Enum>::value.empty();
+		&& !EnumTag_v<Enum>.empty();
+
+
+	template <IsEnum Enum>
+	struct EnumIsFlag {
+		static constexpr bool value {false};
+	};
+
+	template <IsEnum Enum>
+	constexpr auto EnumIsFlag_v {EnumIsFlag<Enum>::value};
+
+	template <typename Enum>
+	concept IsEnumFlag = IsEnum<Enum>
+		&& EnumIsFlag_v<Enum>;
 
 
 	template <IsEnum Enum, Enum value>
@@ -56,7 +69,16 @@ namespace fp::utils {
 	template <IsEnum Enum, std::size_t index>
 	struct EnumValueConstructor {
 		static constexpr Enum (*func)(decltype(index)) {[](decltype(index) index2) -> Enum {
-			return (Enum)index2;
+			return static_cast<Enum> (index2);
+		}};
+	};
+
+	template <IsEnumFlag Enum, std::size_t index>
+	struct EnumValueConstructor<Enum, index> {
+		static constexpr Enum (*func)(decltype(index)) {[](decltype(index) index2) -> Enum {
+			if (index2 >= sizeof(Enum) * 8)
+				return static_cast<Enum> (0);
+			return static_cast<Enum> (1 << index2);
 		}};
 	};
 

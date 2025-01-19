@@ -10,16 +10,22 @@ enum class Color {
 	eBlue = 0x0000ff
 };
 
-enum class Color2 {
-	red = 0xff0000,
-	green = 0x00ff00,
-	blue = 0x0000ff
+enum class Component {
+	cpu = 1 << 0,
+	gpu = 1 << 1,
+	psu = 1 << 6,
+	mobo = 1 << 10,
+	wifi = 1 << 16
 };
 
+template <>
+struct fp::utils::EnumTag<Component> {
+	static constexpr std::string_view value {""};
+};
 
 template <>
-struct fp::utils::EnumTag<Color2> {
-	static constexpr std::string_view value {""};
+struct fp::utils::EnumIsFlag<Component> {
+	static constexpr bool value {true};
 };
 
 template <std::size_t index>
@@ -41,15 +47,23 @@ struct fp::utils::EnumValueConstructor<Color, index> {
 
 int main() {
 	static_assert(fp::utils::HasEnumTag<Color>);
-	static_assert(!fp::utils::HasEnumTag<Color2>);
+	static_assert(!fp::utils::HasEnumTag<Component>);
 
 	constexpr auto valueOfColor {fp::utils::EnumValueFinder_v<Color>};
 	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfColor)>);
-	std::println("<0> : {}", fp::utils::toString<Color, std::get<0> (valueOfColor)> ().value_or("invalid"));
-	std::println("<1> : {}", fp::utils::toString<Color, std::get<1> (valueOfColor)> ().value_or("invalid"));
-	std::println("<2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
+	std::println("Color <0> : {}", fp::utils::toString<Color, std::get<0> (valueOfColor)> ().value_or("invalid"));
+	std::println("Color <1> : {}", fp::utils::toString<Color, std::get<1> (valueOfColor)> ().value_or("invalid"));
+	std::println("Color <2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
 
-	std::println("comp eRed : '{}'", fp::utils::toString<Color2, Color2::red> ().value_or("invalid"));
+	constexpr auto valueOfComponent {fp::utils::EnumValueFinder_v<Component>};
+	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfComponent)>);
+	std::println("Component <0> : {}", fp::utils::toString<Component, std::get<0> (valueOfComponent)> ().value_or("invalid"));
+	std::println("Component <1> : {}", fp::utils::toString<Component, std::get<1> (valueOfComponent)> ().value_or("invalid"));
+	std::println("Component <2> : {}", fp::utils::toString<Component, std::get<2> (valueOfComponent)> ().value_or("invalid"));
+	std::println("Component <3> : {}", fp::utils::toString<Component, std::get<3> (valueOfComponent)> ().value_or("invalid"));
+	std::println("Component <4> : {}", fp::utils::toString<Component, std::get<4> (valueOfComponent)> ().value_or("invalid"));
+
+	std::println("comp cpu : '{}'", fp::utils::toString<Component, Component::cpu> ().value_or("invalid"));
 	std::println("comp invalid : '{}'", fp::utils::toString<Color, (Color)1> ().value_or("invalid"));
 
 //	std::println("eRed : '{}'", fp::utils::toString<Color> (Color::eRed));
