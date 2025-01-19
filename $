@@ -1,5 +1,4 @@
 #include <print>
-#include <ranges>
 
 #include <fp/utils/enums.hpp>
 
@@ -26,15 +25,8 @@ template <std::size_t index>
 struct fp::utils::EnumValueConstructor<Color, index> {
 	static constexpr auto func {[](size_t index2) -> Color {
 		std::underlying_type_t<Color> color {};
-		std::underlying_type_t<Color> mask {0xf};
-		for (const auto i : std::views::iota(std::size_t{0}, std::size_t{8})) {
-			std::size_t current {std::size_t{0b10} << i};
-			std::size_t last {current >> 1};
-			if ((index2 % current) >= last)
-				color |= mask;
-			mask <<= 4;
-		}
-		return static_cast<Color> (color);
+		if (index2 % 2)
+			color = ;
 	}};
 };
 

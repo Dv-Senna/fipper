@@ -17,12 +17,16 @@ namespace fp::utils {
 
 	template <IsEnum Enum>
 	struct EnumTag {
-		static constexpr std::string_view tag {"e"};
+		static constexpr std::string_view value {"e"};
 	};
+
+	template <IsEnum Enum>
+	constexpr auto EnumTag_v {EnumTag<Enum>::value};
 
 	template <typename Enum>
 	concept HasEnumTag = IsEnum<Enum>
-		&& !EnumTag<Enum>::tag.empty();
+		&& !EnumTag<Enum>::value.empty();
+
 
 	template <IsEnum Enum, Enum value>
 	consteval auto toString() noexcept -> std::optional<std::string_view>;

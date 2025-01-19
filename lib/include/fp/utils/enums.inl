@@ -21,7 +21,7 @@ namespace fp::utils {
 		auto endOfName {std::ranges::find(name, ']')};
 		if (column >= endOfName)
 			return std::nullopt;
-		name = {column + 2, endOfName};
+		name = {column + 2 + EnumTag_v<Enum>.size(), endOfName};
 		return name;
 	}
 
