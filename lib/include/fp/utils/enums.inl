@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "fp/utils/constexprMap.hpp"
 #include "fp/utils/enums.hpp"
 
 
@@ -26,12 +27,34 @@ namespace fp::utils {
 	}
 
 
+	template <IsEnum Enum, std::size_t index = 0, std::size_t maxIndex = EnumValueCount_v<Enum>>
+	consteval auto __foreachConstexprEnumValue() noexcept -> fp::utils::ConstexprMap<Enum, std::string_view, maxIndex> {
+		if constexpr (index < maxIndex) {
+			auto map {__foreachConstexprEnumValue<Enum, index + 1, maxIndex> ()};
+			constexpr Enum value {std::get<index> (EnumValueFinder_v<Enum>)};
+			map.insert(value, *toString<Enum, value> ());
+			return map;
+		}
+		else
+			return {};
+	};
+
+
 	template <IsEnum Enum>
-	auto toString(Enum value) noexcept -> std::string_view {
+	consteval auto __getEnumStringMap() noexcept {
+		return __foreachConstexprEnumValue<Enum> ();
+	};
+
+
+	template <IsEnum Enum>
+	constexpr auto toString(Enum value) noexcept -> std::string_view {
 		constexpr std::string_view INVALID_VALUE {"fp::invalid"};
+		constexpr auto map {__getEnumStringMap<Enum> ()};
 
-
-		return INVALID_VALUE;
+		std::optional<std::string_view> str {map[value]};
+		if (!str)
+			return INVALID_VALUE;
+		return *str;
 	}
 
 } // namespace fp::utils

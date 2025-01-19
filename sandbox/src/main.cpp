@@ -18,15 +18,9 @@ enum class Component {
 	wifi = 1 << 15
 };
 
-template <>
-struct fp::utils::EnumTag<Component> {
-	static constexpr std::string_view value {""};
-};
-
-template <>
-struct fp::utils::EnumIsFlag<Component> {
-	static constexpr bool value {true};
-};
+FP_SET_ENUM_TAG(Component, "");
+FP_MAKE_ENUM_FLAG(Component);
+FP_SET_ENUM_MAX_INDEX(Color, 255);
 
 template <std::size_t index>
 struct fp::utils::EnumValueConstructor<Color, index> {
@@ -67,8 +61,10 @@ int main() {
 	std::println("comp cpu : '{}'", fp::utils::toString<Component, Component::cpu> ().value_or("invalid"));
 	std::println("comp invalid : '{}'", fp::utils::toString<Color, (Color)1> ().value_or("invalid"));
 
-//	std::println("eRed : '{}'", fp::utils::toString<Color> (Color::eRed));
-//	std::println("invalid : '{}'", fp::utils::toString<Color> ((Color)1));
+	std::println("eRed : '{}'", fp::utils::toString<Color> (Color::eRed));
+	std::println("invalid : '{}'", fp::utils::toString<Color> ((Color)1));
+
+	std::println("cpu : '{}'", fp::utils::toString<Component> (Component::cpu));
 
 	return 0;
 }

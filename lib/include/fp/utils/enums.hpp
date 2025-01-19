@@ -11,6 +11,11 @@
 #endif
 
 
+#define FP_MAKE_ENUM_FLAG(Enum) template <> struct fp::utils::EnumIsFlag<Enum> {static constexpr bool value {true};}
+#define FP_SET_ENUM_TAG(Enum, tag) template<> struct fp::utils::EnumTag<Enum> {static constexpr std::string_view value {tag};}
+#define FP_SET_ENUM_MAX_INDEX(Enum, maxIndex) template <> struct fp::utils::EnumMaxIndex<Enum> {static constexpr std::size_t value {maxIndex};}
+
+
 namespace fp::utils {
 	template <typename Enum>
 	concept IsEnum = std::is_scoped_enum_v<Enum>;
@@ -45,7 +50,7 @@ namespace fp::utils {
 	consteval auto toString() noexcept -> std::optional<std::string_view>;
 
 	template <IsEnum Enum>
-	auto toString(Enum value) noexcept -> std::string_view;
+	constexpr auto toString(Enum value) noexcept -> std::string_view;
 
 
 	template <IsEnum Enum>
@@ -115,6 +120,12 @@ namespace fp::utils {
 
 	template <IsEnum Enum>
 	constexpr auto EnumValueFinder_v {EnumValueFinder<Enum>::value};
+
+	template <IsEnum Enum>
+	using EnumValueFinder_t = decltype(EnumValueFinder_v<Enum>);
+
+	template <IsEnum Enum>
+	constexpr auto EnumValueCount_v {std::tuple_size_v<EnumValueFinder_t<Enum>>};
 
 } // namespace fp::utils
 
