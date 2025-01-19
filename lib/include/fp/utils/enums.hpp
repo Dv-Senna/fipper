@@ -50,11 +50,11 @@ namespace fp::utils {
 
 	template <IsEnum Enum>
 	struct EnumMaxIndex {
-		static constexpr std::size_t value {255};
+		static constexpr std::size_t value {15};
 	};
 
 	template <IsEnum Enum>
-	constexpr auto EnumMaxIndex_v {EnumMaxIndex<Enum>::value};
+	constexpr std::size_t EnumMaxIndex_v {EnumMaxIndex<Enum>::value};
 
 
 	template <IsEnum Enum, Enum val>
@@ -68,14 +68,14 @@ namespace fp::utils {
 
 	template <IsEnum Enum, std::size_t index>
 	struct EnumValueConstructor {
-		static constexpr Enum (*func)(decltype(index)) {[](decltype(index) index2) -> Enum {
+		static constexpr Enum (*func)(std::size_t) {[](std::size_t index2) -> Enum {
 			return static_cast<Enum> (index2);
 		}};
 	};
 
 	template <IsEnumFlag Enum, std::size_t index>
 	struct EnumValueConstructor<Enum, index> {
-		static constexpr Enum (*func)(decltype(index)) {[](decltype(index) index2) -> Enum {
+		static constexpr Enum (*func)(std::size_t) {[](std::size_t index2) -> Enum {
 			if (index2 >= sizeof(Enum) * 8)
 				return static_cast<Enum> (0);
 			return static_cast<Enum> (1 << index2);
@@ -103,14 +103,14 @@ namespace fp::utils {
 	constexpr auto EnumValueAsTuple_v {EnumValueAsTuple<Enum, index>::value};
 
 
-	template <IsEnum Enum, std::size_t index = 0>
+	template <IsEnum Enum, std::size_t index = 0, std::size_t maxIndex = EnumMaxIndex_v<Enum>>
 	struct EnumValueFinder {
-		static constexpr auto value {std::tuple_cat(EnumValueAsTuple_v<Enum, index>, EnumValueFinder<Enum, index + 1>::value)};
+		static constexpr auto value {std::tuple_cat(EnumValueAsTuple_v<Enum, index>, EnumValueFinder<Enum, index + 1, maxIndex>::value)};
 	};
 
-	template <IsEnum Enum>
-	struct EnumValueFinder<Enum, EnumMaxIndex_v<Enum>> {
-		static constexpr auto value {EnumValueAsTuple_v<Enum, EnumMaxIndex_v<Enum>>};
+	template <IsEnum Enum, std::size_t maxIndex>
+	struct EnumValueFinder<Enum, maxIndex, maxIndex> {
+		static constexpr auto value {EnumValueAsTuple_v<Enum, maxIndex>};
 	};
 
 	template <IsEnum Enum>

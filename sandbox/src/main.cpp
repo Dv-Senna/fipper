@@ -15,7 +15,7 @@ enum class Component {
 	gpu = 1 << 1,
 	psu = 1 << 6,
 	mobo = 1 << 10,
-	wifi = 1 << 16
+	wifi = 1 << 15
 };
 
 template <>
@@ -45,6 +45,7 @@ struct fp::utils::EnumValueConstructor<Color, index> {
 };
 
 
+
 int main() {
 	static_assert(fp::utils::HasEnumTag<Color>);
 	static_assert(!fp::utils::HasEnumTag<Component>);
@@ -53,7 +54,7 @@ int main() {
 	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfColor)>);
 	std::println("Color <0> : {}", fp::utils::toString<Color, std::get<0> (valueOfColor)> ().value_or("invalid"));
 	std::println("Color <1> : {}", fp::utils::toString<Color, std::get<1> (valueOfColor)> ().value_or("invalid"));
-	std::println("Color <2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
+//	std::println("Color <2> : {}", fp::utils::toString<Color, std::get<2> (valueOfColor)> ().value_or("invalid"));
 
 	constexpr auto valueOfComponent {fp::utils::EnumValueFinder_v<Component>};
 	std::println("SIZE OF TUPLE : {}", std::tuple_size_v<decltype(valueOfComponent)>);
