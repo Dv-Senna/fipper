@@ -4,6 +4,7 @@
 
 #include <fp/socket.hpp>
 #include <fp/utils/enums.hpp>
+#include <fp/errorStack.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -14,10 +15,6 @@ using namespace std::literals;
 
 
 int main() {
-	std::println("Result::eSuccess : {}", fp::utils::toString(fp::Result::eSuccess));
-	std::println("Result::eFailure : {}", fp::utils::toString(fp::Result::eFailure));
-	std::println("Result::eNothingToRecieve : {}", fp::utils::toString(fp::Result::eNothingToRecieve));
-
 	fp::Socket socket {};
 	if (socket.create({.port = 1242}) != fp::Result::eSuccess) {
 		std::println(stderr, "Can't create socket : {}", errno);
