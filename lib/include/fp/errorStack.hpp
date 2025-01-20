@@ -6,8 +6,6 @@
 #include <string>
 #include <string_view>
 
-#include <print>
-
 #include "fp/core.hpp"
 #include "fp/result.hpp"
 #include "fp/utils/enums.hpp"
@@ -76,36 +74,29 @@ namespace fp {
 		public:
 			ErrorStack() = delete;
 
-			template <typename ...Args>
-			static auto push(
-				std::format_string<Args...> str,
-				std::source_location location = std::source_location::current(),
-				Args &&...args
-			) noexcept -> void {
-				std::string formattedStr {std::format("in {} ({}:{}) > {}",
-					location.function_name(),
-					location.file_name(),
-					location.line(),
-					std::format(str, std::forward(args)...)
-				)};
-				s_stack.push(formattedStr);
-			}
+			static auto push(std::string_view str, std::source_location location = std::source_location::current()) noexcept -> void;
 
-			template <typename Return, typename ...Args>
+			template <typename Return>
 			[[nodiscard]] static auto push(
 				Return &&ret,
-				std::format_string<Args...> str,
-				std::source_location location = std::source_location::current(),
-				Args &&...args
+				std::string_view str,
+				std::source_location location = std::source_location::current()
 			) noexcept {
 				if constexpr (std::same_as<Return, fp::Result>)
-					ErrorStack::push("{} : {}", location, fp::utils::toString(ret), std::format(str, std::forward(args)...));
+					ErrorStack::push(std::format("{} : {}", fp::utils::toString(ret), str), location);
 				else
-					ErrorStack::push(str, location, std::forward(args)...);
+					ErrorStack::push(str, location);
 				return ret;
 			}
 
 			[[nodiscard]] static inline auto iterate() noexcept -> ErrorStackRange {return ErrorStackRange();}
+			
+			static auto logAll() noexcept -> void;
+			template <typename Return>
+			[[nodiscard]] static auto logAll(Return &&ret) {
+				ErrorStack::logAll();
+				return ret;
+			}
 
 
 		protected:

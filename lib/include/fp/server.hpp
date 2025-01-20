@@ -20,6 +20,9 @@ namespace fp {
 
 
 		private:
+			static auto s_signalHandler(int signal) noexcept -> void;
+			static bool s_endSignal;
+
 			fp::Socket m_serverSocket;
 	};
 
