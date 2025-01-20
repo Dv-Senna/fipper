@@ -5,6 +5,7 @@
 	#include <stop_compilation>
 #endif
 
+#include <chrono>
 #include <cstdint>
 #include <expected>
 #include <optional>
@@ -15,6 +16,8 @@
 
 
 namespace fp {
+	using namespace std::literals;
+
 	class FP_CORE Socket {
 		public:
 			struct CreateInfos {
@@ -34,7 +37,15 @@ namespace fp {
 
 			[[nodiscard]] auto listen(std::uint32_t queueSizeHint = 1) noexcept -> fp::Result;
 			[[nodiscard]] auto accept() noexcept -> std::optional<Socket>;
-			[[nodiscard]] auto recieve() noexcept -> std::expected<std::vector<std::byte>, fp::Result>;
+
+			[[nodiscard]] auto hasDataToRecieve(std::chrono::milliseconds timeout = 0ms) noexcept -> std::optional<bool>;
+			template <std::size_t BUFFER_SIZE = 1024>
+			[[nodiscard]] inline auto recieve() noexcept -> std::expected<std::vector<std::byte>, fp::Result> {
+				std::byte buffer[BUFFER_SIZE];
+				return this->recieve(buffer, BUFFER_SIZE);
+			}
+			[[nodiscard]] auto recieve(std::byte *buffer, std::size_t bufferSize) noexcept -> std::expected<std::vector<std::byte>, fp::Result>;
+
 			[[nodiscard]] auto send(const std::vector<std::byte> &data) noexcept -> fp::Result;
 
 			inline auto getSocket() const noexcept -> int {return m_socket;}

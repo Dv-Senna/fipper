@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+using namespace std::literals;
+
 
 int main() {
 	fp::Socket socket {};
@@ -24,6 +26,8 @@ int main() {
 		return 1;
 	}
 
+	std::println("HAS DATA TO REC : {}", *socket.hasDataToRecieve());
+
 	while (true) {
 		auto clientSocketWithError {socket.accept()};
 		if (!clientSocketWithError) {
@@ -32,6 +36,7 @@ int main() {
 		}
 		fp::Socket clientSocket {std::move(*clientSocketWithError)};
 
+		std::println("HAS DATA TO REC : {}", *clientSocket.hasDataToRecieve(1000ms));
 		auto requestWithError {clientSocket.recieve()};
 		if (!requestWithError) {
 			if (requestWithError.error() > fp::Result::eSuccess)
