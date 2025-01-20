@@ -33,6 +33,14 @@ namespace fp::utils {
 	template <IsEnum Enum>
 	constexpr auto EnumTag_v {EnumTag<Enum>::value};
 
+	template <IsEnum Enum>
+	struct EnumCapitalized {
+		static constexpr bool value {true};
+	};
+
+	template <IsEnum Enum>
+	constexpr auto EnumCapitalized_v {EnumCapitalized<Enum>::value};
+
 	template <typename Enum>
 	concept HasEnumTag = IsEnum<Enum>
 		&& !EnumTag_v<Enum>.empty();

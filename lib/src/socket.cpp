@@ -98,7 +98,7 @@ namespace fp {
 
 
 	auto Socket::send(const std::vector<std::byte> &data) noexcept -> fp::Result {
-		if (::send(m_socket, data.data(), data.size(), 0) != data.size())
+		if (::send(m_socket, data.data(), data.size(), 0) != static_cast<ssize_t> (data.size()))
 			return fp::Result::eFailure;
 		return fp::Result::eSuccess;
 	}

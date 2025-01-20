@@ -39,6 +39,13 @@ target_link_libraries(
 	${SANDBOX_NAME} PRIVATE ${PROJECT_NAME}
 )
 
+if (MSVC)
+	target_compile_options(${SANDBOX_NAME} PRIVATE /W4)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	target_compile_options(${SANDBOX_NAME} PRIVATE -Wall -Wextra -pedantic)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	target_compile_options(${SANDBOX_NAME} PRIVATE -Wall -Wextra -pedantic -stdlib=libc++)
+endif()
 
 
 if (WIN32)

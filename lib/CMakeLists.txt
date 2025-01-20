@@ -36,6 +36,15 @@ file(GLOB_RECURSE LIBRARY_SOURCE *.cpp)
 add_library(${LIBRARY_NAME} ${LIBRARY_TYPE} ${LIBRARY_HEADER} ${LIBRARY_INLINE} ${LIBRARY_SOURCE})
 set_property(TARGET ${LIBRARY_NAME} PROPERTY CXX_STANDARD ${PROJECT_CPP_DIALECT})
 
+if (MSVC)
+	target_compile_options(${LIBRARY_NAME} PRIVATE /W4)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	target_compile_options(${LIBRARY_NAME} PRIVATE -Wall -Wextra -pedantic)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	target_compile_options(${LIBRARY_NAME} PRIVATE -Wall -Wextra -pedantic -stdlib=libc++)
+endif()
+
+
 if (WIN32)
 	add_compile_definitions(${PROJECT_ACRONYM_UPPERCASE}_WINDOWS)
 elseif (UNIX)

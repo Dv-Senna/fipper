@@ -1,28 +1,30 @@
 #pragma once
 
 #include <algorithm>
+#include <ranges>
 
 #include "fp/utils/constexprMap.hpp"
 #include "fp/utils/enums.hpp"
 
 
 namespace fp::utils {
-#ifdef __clang__
-	constexpr char PRETTY_FUNC_TEMPLATE_SEPARATOR {','};
-#elifdef __GNUC__
-	constexpr char PRETTY_FUNC_TEMPLATE_SEPARATOR {';'};
-#endif
-
 	template <IsEnum Enum, Enum value>
 	consteval auto toString() noexcept -> std::optional<std::string_view> {
 		std::string_view name {__PRETTY_FUNCTION__};
+		std::string_view lookupString {"value = "};
 
-		name = {std::ranges::find(name, PRETTY_FUNC_TEMPLATE_SEPARATOR) + 2, name.end()};
-		auto column {std::ranges::find(name, ':')};
-		auto endOfName {std::ranges::find(name, ']')};
-		if (column >= endOfName)
+		name = {name.begin() + name.find(lookupString) + lookupString.size(), name.end() - 1};
+		if (name[0] == '(')
 			return std::nullopt;
-		name = {column + 2 + EnumTag_v<Enum>.size(), endOfName};
+
+		auto column {std::ranges::find_last(name, ':').begin()};
+		if (column != name.end())
+			name = {column + 1, name.end()};
+
+		if (name.size() <= EnumTag_v<Enum>.size())
+			return std::nullopt;
+		name = {name.begin() + EnumTag_v<Enum>.size(), name.end()};
+
 		return name;
 	}
 
@@ -48,7 +50,7 @@ namespace fp::utils {
 
 	template <IsEnum Enum>
 	constexpr auto toString(Enum value) noexcept -> std::string_view {
-		constexpr std::string_view INVALID_VALUE {"fp::invalid"};
+		constexpr std::string_view INVALID_VALUE {"<invalid>"};
 		constexpr auto map {__getEnumStringMap<Enum> ()};
 
 		std::optional<std::string_view> str {map[value]};

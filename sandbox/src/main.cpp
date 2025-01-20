@@ -14,6 +14,10 @@ using namespace std::literals;
 
 
 int main() {
+	std::println("Result::eSuccess : {}", fp::utils::toString(fp::Result::eSuccess));
+	std::println("Result::eFailure : {}", fp::utils::toString(fp::Result::eFailure));
+	std::println("Result::eNothingToRecieve : {}", fp::utils::toString(fp::Result::eNothingToRecieve));
+
 	fp::Socket socket {};
 	if (socket.create({.port = 1242}) != fp::Result::eSuccess) {
 		std::println(stderr, "Can't create socket : {}", errno);
@@ -26,8 +30,6 @@ int main() {
 		return 1;
 	}
 
-	std::println("HAS DATA TO REC : {}", *socket.hasDataToRecieve());
-
 	while (true) {
 		auto clientSocketWithError {socket.accept()};
 		if (!clientSocketWithError) {
@@ -36,7 +38,6 @@ int main() {
 		}
 		fp::Socket clientSocket {std::move(*clientSocketWithError)};
 
-		std::println("HAS DATA TO REC : {}", *clientSocket.hasDataToRecieve(1000ms));
 		auto requestWithError {clientSocket.recieve()};
 		if (!requestWithError) {
 			if (requestWithError.error() > fp::Result::eSuccess)
