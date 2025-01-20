@@ -1,7 +1,6 @@
 #include <cerrno>
 #include <cstring>
 #include <print>
-#include <ranges>
 
 #include <fp/socket.hpp>
 #include <fp/utils/enums.hpp>
@@ -15,19 +14,46 @@
 int main() {
 	fp::Socket socket {};
 	if (socket.create({.port = 1242}) != fp::Result::eSuccess) {
-		std::println("Can't create socket : {}", errno);
+		std::println(stderr, "Can't create socket : {}", errno);
 		return 1;
 	}
 
-	if (listen(socket.getSocket(), 5) != 0) {
-		std::println("Can't listen : {}", errno);
+	std::println("Listening...");
+	if (socket.listen(5) != fp::Result::eSuccess) {
+		std::println(stderr, "Can't listen : {}", errno);
 		return 1;
 	}
 
-	int clientSocket {accept(socket.getSocket(), nullptr, nullptr)};
+	while (true) {
+		auto clientSocketWithError {socket.accept()};
+		if (!clientSocketWithError) {
+			std::println(stderr, "Can't accept connection : {}", errno);
+			return 1;
+		}
+		fp::Socket clientSocket {std::move(*clientSocketWithError)};
 
-	const char *msg {"Hello from fipper !"};
-	send(clientSocket, msg, strlen(msg), 0);
+		auto requestWithError {clientSocket.recieve()};
+		if (!requestWithError) {
+			if (requestWithError.error() > fp::Result::eSuccess)
+				continue;
+
+			std::println(stderr, "Can't recieve data : {}", errno);
+			return 1;
+		}
+
+		std::string request {(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()};
+		std::println("Request : {}", request);
+
+		std::string html {"<html><body><h1>Hello World !</h1></body></html>"};
+		std::string response {
+			"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(html.size()) + "\r\n\r\n" + html
+		};
+		if (clientSocket.send({(std::byte*)response.data(), (std::byte*)response.data() + response.size()}) != fp::Result::eSuccess) {
+			std::println(stderr, "Can't send data : {}", errno);
+			return 1;
+		}
+		std::println("Response sent");
+	}
 
 	return 0;
 }

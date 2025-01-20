@@ -13,7 +13,12 @@
 
 #define FP_MAKE_ENUM_FLAG(Enum) template <> struct fp::utils::EnumIsFlag<Enum> {static constexpr bool value {true};}
 #define FP_SET_ENUM_TAG(Enum, tag) template<> struct fp::utils::EnumTag<Enum> {static constexpr std::string_view value {tag};}
-#define FP_SET_ENUM_MAX_INDEX(Enum, maxIndex) template <> struct fp::utils::EnumMaxIndex<Enum> {static constexpr std::size_t value {maxIndex};}
+#define FP_SET_ENUM_START_INDEX(Enum, startIndex) template <> struct fp::utils::EnumStartIndex<Enum> {\
+	static constexpr std::size_t value {static_cast<std::size_t> (startIndex)};\
+}
+#define FP_SET_ENUM_MAX_INDEX(Enum, maxIndex) template <> struct fp::utils::EnumMaxIndex<Enum> {\
+	static constexpr std::size_t value {static_cast<std::size_t> (maxIndex)};\
+}
 
 
 namespace fp::utils {
@@ -52,6 +57,14 @@ namespace fp::utils {
 	template <IsEnum Enum>
 	constexpr auto toString(Enum value) noexcept -> std::string_view;
 
+
+	template <IsEnum Enum>
+	struct EnumStartIndex {
+		static constexpr std::size_t value {0};
+	};
+
+	template <IsEnum Enum>
+	constexpr std::size_t EnumStartIndex_v {EnumStartIndex<Enum>::value};
 
 	template <IsEnum Enum>
 	struct EnumMaxIndex {
@@ -108,7 +121,7 @@ namespace fp::utils {
 	constexpr auto EnumValueAsTuple_v {EnumValueAsTuple<Enum, index>::value};
 
 
-	template <IsEnum Enum, std::size_t index = 0, std::size_t maxIndex = EnumMaxIndex_v<Enum>>
+	template <IsEnum Enum, std::size_t index = EnumStartIndex_v<Enum>, std::size_t maxIndex = EnumMaxIndex_v<Enum>>
 	struct EnumValueFinder {
 		static constexpr auto value {std::tuple_cat(EnumValueAsTuple_v<Enum, index>, EnumValueFinder<Enum, index + 1, maxIndex>::value)};
 	};
