@@ -20,10 +20,12 @@ namespace fp {
 
 	auto Server::run() noexcept -> fp::Result {
 		using namespace std::literals;
-		(void)std::signal(SIGINT, Server::s_signalHandler);
+		//(void)std::signal(SIGINT, Server::s_signalHandler);
 
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
+
+		int a {};
 
 		while (!s_endSignal) {
 			auto clientSocketWithError {m_serverSocket.accept()};
@@ -45,7 +47,7 @@ namespace fp {
 			std::println("REQ : {}", request);
 			std::println("-------------");
 
-			std::string html {"<html><body><h1>Hello World !</h1></body></html>"};
+			std::string html {std::format("<html><body><h1>Hello World {} !</h1></body></html>", a++)};
 			std::string response {
 				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(html.size()) + "\r\n\r\n" + html
 			};
