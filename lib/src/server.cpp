@@ -47,6 +47,20 @@ namespace fp {
 			std::println("REQ : {}", request);
 			std::println("-------------");
 
+			{
+				std::string_view methodString {request.begin(), std::ranges::find(request, ' ')};
+				fp::HttpMethod method {};
+				if (methodString == "GET")
+					method = fp::HttpMethod::eGet;
+
+				auto route {m_endpoints.find(method)};
+				if (route == m_endpoints.end())
+					continue;
+				std::latch latch {1};
+				(void)route->second["/"]->handleRequest(latch, std::move(clientSocket), request);
+			}
+
+			continue;
 			std::string html {std::format("<html><body><h1>Hello World {} !</h1></body></html>", a++)};
 			std::string response {
 				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(html.size()) + "\r\n\r\n" + html

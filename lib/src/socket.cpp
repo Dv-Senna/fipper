@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <print>
+
 #include "fp/errorStack.hpp"
 
 
@@ -26,8 +28,10 @@ namespace fp {
 
 
 	Socket::~Socket() {
-		if (m_socket > 0)
+		if (m_socket > 0) {
 			close(m_socket);
+			std::println("Destroy socket {}", m_socket);
+		}
 	}
 
 

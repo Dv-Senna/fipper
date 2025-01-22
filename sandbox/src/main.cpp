@@ -23,31 +23,15 @@ int main() {
 	}};
 
 
-	fp::Request<int, std::string, float> request {};
-	request.setParamNames({"param1", "param2"});
-	request.markRuntimeReady();
-
-	static_assert(std::same_as<decltype(request.getParam<0> ()), std::string&>);
-	request.getParam<0> () = "Hello World !";
-	std::println("PARAM1 : {}", **request.getParam<std::string> ("param1"));
-
-	fp::Request<void> request2 {};
-	request2.markRuntimeReady();
-
-	fp::Request<void, std::string> request3 {};
-	request3.getParam<0> () = "Hello World !";
-	std::println("3 PARAM1 : {}", request3.getParam<0> ());
-
-	fp::Request<int> request4 {};
-
-	return 0;
-
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess) {
 		std::println(stderr, "Can't create server");
 		return 1;
 	}
 
+	server.get("/", [](){
+		std::println("ROUTE REQUEST !");
+	});
 
 	if (server.run() != fp::Result::eSuccess) {
 		std::println(stderr, "Can't run server");
