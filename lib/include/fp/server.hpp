@@ -40,6 +40,7 @@ namespace fp {
 			static auto s_signalHandler(int signal) noexcept -> void;
 			static bool s_endSignal;
 
+			std::uint16_t m_port;
 			std::map<fp::HttpMethod, std::map<std::string_view, std::unique_ptr<fp::EndpointBase>>> m_endpoints;
 			fp::Socket m_serverSocket;
 	};

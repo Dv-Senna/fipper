@@ -30,7 +30,7 @@ int main() {
 	std::atomic_int connectionCount {};
 	server.get<void, std::string> ("/", [&connectionCount](const fp::Request<void> &, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format("<html><body><h1>Hello World for the {}th time !</h1></body></html>", ++connectionCount);
+		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>Hello World for the {}th time !</h1></body></html>", ++connectionCount);
 		return fp::HttpCode::e200;
 	});
 

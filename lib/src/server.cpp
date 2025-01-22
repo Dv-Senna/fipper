@@ -10,8 +10,9 @@
 
 namespace fp {
 	auto Server::create(const CreateInfos &createInfos) noexcept -> fp::Result {
+		m_port = createInfos.port;
 		fp::Socket::CreateInfos socketCreateInfos {};
-		socketCreateInfos.port = createInfos.port;
+		socketCreateInfos.port = m_port;
 		if (m_serverSocket.create(socketCreateInfos) != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't create server socket");
 
@@ -25,6 +26,10 @@ namespace fp {
 
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
+
+
+		std::println("Server listening");
+		std::println("\tFor local use : \033]8;;localhost:{0}\033\\localhost:{0}\033]8;;\033\\", m_port);
 
 		std::optional<std::future<std::optional<fp::Socket>>> clientSocketPromise {};
 
@@ -62,8 +67,7 @@ namespace fp {
 
 			auto route {m_endpoints.find(method)};
 			if (route == m_endpoints.end()) {
-				std::string_view data {"HTTP/1.1 404 Not Found"};
-				if (clientSocket.send({(const std::byte*)data.data(), (const std::byte*)data.data() + data.size()}) != fp::Result::eSuccess) {
+				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
 					fp::ErrorStack::push("Can't send 404 after invalid method");
 					fp::ErrorStack::logAll();
 				}
@@ -73,8 +77,7 @@ namespace fp {
 			std::string_view routeString {*++split.begin()};
 			auto endpoint {route->second.find(routeString)};
 			if (endpoint == route->second.end()) {
-				std::string_view data {"HTTP/1.1 404 Not Found"};
-				if (clientSocket.send({(const std::byte*)data.data(), (const std::byte*)data.data() + data.size()}) != fp::Result::eSuccess) {
+				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
 					fp::ErrorStack::push("Can't send 404 after invalid route");
 					fp::ErrorStack::logAll();
 				}
