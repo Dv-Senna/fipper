@@ -85,7 +85,7 @@ namespace fp {
 			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
 		}
 
-		std::println("Clean shutdown");
+		new (&clientSocketPromise) decltype(clientSocketPromise)(std::nullopt);
 		return fp::Result::eSuccess;
 	}
 
