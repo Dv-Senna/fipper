@@ -7,7 +7,6 @@
 #include "fp/httpMethod.hpp"
 #include "fp/request.hpp"
 #include "fp/response.hpp"
-#include "fp/result.hpp"
 #include "fp/socket.hpp"
 
 
@@ -25,7 +24,7 @@ namespace fp {
 			constexpr EndpointBase(fp::HttpMethod method, std::string_view route) noexcept : m_method {method}, m_route {route} {}
 			~EndpointBase() = default;
 
-			virtual auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> fp::Result = 0;
+			virtual auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void = 0;
 
 		protected:
 			fp::HttpMethod m_method;
@@ -40,7 +39,7 @@ namespace fp {
 			constexpr Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept;
 			~Endpoint() = default;
 
-			auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> fp::Result override;
+			auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void override;
 
 
 		private:

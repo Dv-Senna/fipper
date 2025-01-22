@@ -24,10 +24,8 @@ int main() {
 
 
 	fp::Server server {};
-	if (server.create({.port = 1242}) != fp::Result::eSuccess) {
-		std::println(stderr, "Can't create server");
-		return 1;
-	}
+	if (server.create({.port = 1242}) != fp::Result::eSuccess)
+		return fp::ErrorStack::push(1, "Can't create server");
 
 	int connectionCount {};
 	server.get<void, std::string> ("/", [&connectionCount](const fp::Request<void> &, fp::Response<std::string> &response) noexcept {
@@ -37,10 +35,8 @@ int main() {
 		return fp::HttpCode::e200;
 	});
 
-	if (server.run() != fp::Result::eSuccess) {
-		std::println(stderr, "Can't run server");
-		return 1;
-	}
+	if (server.run() != fp::Result::eSuccess)
+		return fp::ErrorStack::push(1, "Can't run server");
 
 	return 0;
 }

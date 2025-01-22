@@ -25,8 +25,6 @@ namespace fp {
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
 
-		int a {};
-
 		while (!s_endSignal) {
 			auto clientSocketWithError {m_serverSocket.accept()};
 			if (!clientSocketWithError)
@@ -43,30 +41,36 @@ namespace fp {
 			if (!requestWithError)
 				return fp::ErrorStack::push(fp::Result::eFailure, "Can't read data for client socket");
 			std::string request {(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()};
-			std::println("-------------");
-			std::println("REQ : {}", request);
-			std::println("-------------");
 
-			{
-				std::string_view methodString {request.begin(), std::ranges::find(request, ' ')};
-				fp::HttpMethod method {};
-				if (methodString == "GET")
-					method = fp::HttpMethod::eGet;
+			auto split {std::views::split(request, ' ')};
+			std::string_view methodString {*split.begin()};
+			fp::HttpMethod method {};
+			if (methodString == "GET")
+				method = fp::HttpMethod::eGet;
 
-				auto route {m_endpoints.find(method)};
-				if (route == m_endpoints.end())
-					continue;
-				std::latch latch {1};
-				(void)route->second["/"]->handleRequest(latch, std::move(clientSocket), request);
+			auto route {m_endpoints.find(method)};
+			if (route == m_endpoints.end()) {
+				std::string_view data {"HTTP/1.1 404 Not Found"};
+				if (clientSocket.send({(const std::byte*)data.data(), (const std::byte*)data.data() + data.size()}) != fp::Result::eSuccess) {
+					fp::ErrorStack::push("Can't send 404 after invalid method");
+					fp::ErrorStack::logAll();
+				}
+				continue;
 			}
 
-			continue;
-			std::string html {std::format("<html><body><h1>Hello World {} !</h1></body></html>", a++)};
-			std::string response {
-				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(html.size()) + "\r\n\r\n" + html
-			};
-			if (clientSocket.send({(std::byte*)response.data(), (std::byte*)response.data() + response.size()}) != fp::Result::eSuccess)
-				return fp::ErrorStack::push(fp::Result::eFailure, "Can't send data for client socket");
+			std::string_view routeString {*++split.begin()};
+			auto endpoint {route->second.find(routeString)};
+			if (endpoint == route->second.end()) {
+				std::string_view data {"HTTP/1.1 404 Not Found"};
+				if (clientSocket.send({(const std::byte*)data.data(), (const std::byte*)data.data() + data.size()}) != fp::Result::eSuccess) {
+					fp::ErrorStack::push("Can't send 404 after invalid route");
+					fp::ErrorStack::logAll();
+				}
+				continue;
+			}
+
+			std::latch latch {1};
+			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
 		}
 
 		return fp::Result::eSuccess;

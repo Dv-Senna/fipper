@@ -19,7 +19,7 @@ namespace fp {
 
 
 	template <fp::IsRequest Request, fp::IsResponse Response, fp::IsEndpointCallback<Request, Response> Func>
-	auto Endpoint<Request, Response, Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> fp::Result {
+	auto Endpoint<Request, Response, Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> void {
 		std::thread([&, this](fp::Socket &&connection){
 			fp::Socket clientConnection {std::move(connection)};
 			Response response {};
@@ -39,8 +39,6 @@ namespace fp {
 			}
 			latch.count_down();
 		}, std::move(connection)).detach();
-
-		return fp::Result::eSuccess;
 	}
 
 } // namespace fp

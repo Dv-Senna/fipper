@@ -42,7 +42,7 @@ namespace fp {
 			case HttpCode::e415: return "Unsupported Media Type";
 			case HttpCode::e416: return "Requested Range Not Satisfiable";
 			case HttpCode::e417: return "Expectation Failed";
-			case HttpCode::e418: return "I’m a teapot";
+			case HttpCode::e418: return "I'm a teapot";
 			case HttpCode::e421: return "Misdirected Request";
 			case HttpCode::e422: return "Unprocessable Entity";
 			case HttpCode::e423: return "Locked";
