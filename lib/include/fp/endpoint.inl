@@ -2,6 +2,7 @@
 
 #include "fp/endpoint.hpp"
 
+#include <format>
 #include <thread>
 
 #include "fp/errorStack.hpp"
@@ -22,13 +23,16 @@ namespace fp {
 		std::thread([&, this](fp::Socket &&connection){
 			fp::Socket clientConnection {std::move(connection)};
 			Response response {};
-			this->m_callback({}, response);
+			fp::HttpCode code {this->m_callback({}, response)};
 			response.serialize();
 
 			std::string html {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
-			std::string responseData {
-				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(html.size()) + "\r\n\r\n" + html
-			};
+			std::string responseData {std::format("HTTP/1.1 {} {}\r\nContent-Type: text/html\r\nContent-Lenght: {}\r\n\r\n{}",
+				fp::utils::toString<fp::HttpCode> (code),
+				fp::getHttpCodeString(code).value_or(""),
+				html.size(),
+				html
+			)};
 			if (clientConnection.send({(std::byte*)responseData.data(), (std::byte*)responseData.data() + responseData.size()}) != fp::Result::eSuccess) {
 				fp::ErrorStack::push("Can't send response of route");
 				fp::ErrorStack::logAll();

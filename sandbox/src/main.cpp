@@ -34,6 +34,7 @@ int main() {
 		std::println("ROUTE REQUEST !");
 		response.header.contentType = fp::ContentType::eHtml;
 		response.body = std::format("<html><body><h1>Hello World for the {}th time !</h1></body></html>", ++connectionCount);
+		return fp::HttpCode::e200;
 	});
 
 	if (server.run() != fp::Result::eSuccess) {

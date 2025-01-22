@@ -3,6 +3,7 @@
 #include <latch>
 #include <string_view>
 
+#include "fp/httpCode.hpp"
 #include "fp/httpMethod.hpp"
 #include "fp/request.hpp"
 #include "fp/response.hpp"
@@ -15,7 +16,7 @@ namespace fp {
 	concept IsEndpointCallback = fp::IsRequest<Request>
 		&& fp::IsResponse<Response>
 		&& std::is_nothrow_invocable_v<Func, Request, Response&>
-		&& std::is_void_v<std::invoke_result_t<Func, Request, Response&>>;
+		&& std::same_as<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode>;
 
 
 	class EndpointBase {
