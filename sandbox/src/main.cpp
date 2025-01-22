@@ -29,8 +29,11 @@ int main() {
 		return 1;
 	}
 
-	server.get("/", [](){
+	int connectionCount {};
+	server.get<void, std::string> ("/", [&connectionCount](const fp::Request<void> &, fp::Response<std::string> &response) noexcept {
 		std::println("ROUTE REQUEST !");
+		response.header.contentType = fp::ContentType::eHtml;
+		response.body = std::format("<html><body><h1>Hello World for the {}th time !</h1></body></html>", ++connectionCount);
 	});
 
 	if (server.run() != fp::Result::eSuccess) {

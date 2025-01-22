@@ -20,7 +20,8 @@ namespace fp {
 		eCsv,
 		eHtml,
 		eJavascript,
-		eXml
+		eXml,
+		eUnknown
 	};
 
 	namespace header {
@@ -34,7 +35,7 @@ namespace fp {
 
 		struct RepresentationHeader {
 			std::size_t contentSize;
-			ContentType contentType {ContentType::eJson};
+			ContentType contentType {ContentType::eUnknown};
 			std::string contentLanguage {"en"};
 		};
 

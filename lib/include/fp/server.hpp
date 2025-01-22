@@ -25,16 +25,16 @@ namespace fp {
 			[[nodiscard]] auto create(const CreateInfos &createInfos) noexcept -> fp::Result;
 			[[nodiscard]] auto run() noexcept -> fp::Result;
 
-			template <typename Func>
+			template <typename Request, typename Response, typename Func>
 			auto get(std::string_view route, Func &&callback) noexcept -> void {
-				this->m_addEndpoint(fp::HttpMethod::eGet, route, callback);
+				this->m_addEndpoint<Request, Response, Func> (fp::HttpMethod::eGet, route, std::move(callback));
 			}
 
 
 		private:
-			template <typename Func>
+			template <typename Request, typename Response, typename Func>
 			auto m_addEndpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept -> void {
-				m_endpoints[method][route] = std::make_unique<fp::Endpoint<void, void, Func>> (method, route, callback);
+				m_endpoints[method][route] = std::make_unique<fp::Endpoint<fp::Request<Request>, fp::Response<Response>, Func>> (method, route, std::move(callback));
 			}
 
 			static auto s_signalHandler(int signal) noexcept -> void;

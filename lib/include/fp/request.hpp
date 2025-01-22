@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <optional>
 #include <string_view>
 #include <tuple>
@@ -9,9 +10,18 @@
 
 
 namespace fp {
+	template <typename Request>
+	concept IsRequest = requires (Request req, const Request constReq, typename Request::Header) {
+		{req.markRuntimeReady()} -> std::same_as<void>;
+		{req.getHeader()} -> std::same_as<typename Request::Header&>;
+		{constReq.getHeader()} -> std::same_as<const typename Request::Header&>;
+	};
+
 	template <typename Body, typename ...Params>
 	class Request {
 		public:
+			using Header = RequestHeader<Body>;
+
 			constexpr Request() noexcept = default;
 
 			auto markRuntimeReady() noexcept -> void;
@@ -45,6 +55,8 @@ namespace fp {
 	template <typename ...Params>
 	class Request<void, Params...> {
 		public:
+			using Header = RequestHeader<void>;
+
 			constexpr Request() noexcept = default;
 
 			auto markRuntimeReady() noexcept -> void;
@@ -75,6 +87,8 @@ namespace fp {
 	template <typename Body>
 	class Request<Body> {
 		public:
+			using Header = RequestHeader<Body>;
+
 			constexpr Request() noexcept = default;
 
 			auto markRuntimeReady() noexcept -> void {}
@@ -93,6 +107,8 @@ namespace fp {
 	template <>
 	class Request<void> {
 		public:
+			using Header = RequestHeader<void>;
+
 			constexpr Request() noexcept = default;
 
 			auto markRuntimeReady() noexcept -> void {}
