@@ -1,6 +1,7 @@
 #include "fp/server.hpp"
 
 #include <csignal>
+#include <future>
 #include <print>
 #include <unistd.h>
 
@@ -20,13 +21,24 @@ namespace fp {
 
 	auto Server::run() noexcept -> fp::Result {
 		using namespace std::literals;
-		//(void)std::signal(SIGINT, Server::s_signalHandler);
+		(void)std::signal(SIGINT, Server::s_signalHandler);
 
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
 
+		std::optional<std::future<std::optional<fp::Socket>>> clientSocketPromise {};
+
 		while (!s_endSignal) {
-			auto clientSocketWithError {m_serverSocket.accept()};
+			if (!clientSocketPromise) {
+				clientSocketPromise = std::async([this](){return this->m_serverSocket.accept();});
+				continue;
+			}
+
+			if (clientSocketPromise->wait_for(1000ms) != std::future_status::ready)
+				continue;
+
+			auto clientSocketWithError {clientSocketPromise->get()};
+			clientSocketPromise = std::nullopt;
 			if (!clientSocketWithError)
 				return fp::ErrorStack::push(fp::Result::eFailure, "Can't accept client socket");
 			fp::Socket &clientSocket {*clientSocketWithError};
@@ -73,6 +85,7 @@ namespace fp {
 			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
 		}
 
+		std::println("Clean shutdown");
 		return fp::Result::eSuccess;
 	}
 
