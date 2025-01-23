@@ -8,14 +8,22 @@
 #include "fp/request.hpp"
 #include "fp/response.hpp"
 #include "fp/socket.hpp"
+#include "fp/utils/traits.hpp"
 
 
 namespace fp {
 	template <typename Func, typename Request, typename Response>
-	concept IsEndpointCallback = fp::IsRequest<Request>
+	concept IsEndpointCallbackWithReqRes = fp::IsRequest<Request>
 		&& fp::IsResponse<Response>
 		&& std::is_nothrow_invocable_v<Func, Request, Response&>
 		&& std::same_as<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode>;
+
+	template <typename Func>
+	concept IsEndpointCallback = fp::IsEndpointCallbackWithReqRes<
+		Func,
+		fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>,
+		fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 1>>
+	>;
 
 
 	class EndpointBase {
@@ -32,9 +40,12 @@ namespace fp {
 	};
 
 
-	template <fp::IsRequest Request, fp::IsResponse Response, fp::IsEndpointCallback<Request, Response> Func>
+	template <fp::IsEndpointCallback Func>
 	class Endpoint final : public EndpointBase {
 		public:
+			using Request = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>;
+			using Response = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 1>>;
+
 			Endpoint() noexcept = delete;
 			constexpr Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept;
 			~Endpoint() = default;

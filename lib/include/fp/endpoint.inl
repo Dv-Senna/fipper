@@ -9,8 +9,8 @@
 
 
 namespace fp {
-	template <fp::IsRequest Request, fp::IsResponse Response, fp::IsEndpointCallback<Request, Response> Func>
-	constexpr Endpoint<Request, Response, Func>::Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept :
+	template <fp::IsEndpointCallback Func>
+	constexpr Endpoint<Func>::Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept :
 		EndpointBase(method, route),
 		m_callback {std::move(callback)}
 	{
@@ -18,8 +18,8 @@ namespace fp {
 	}
 
 
-	template <fp::IsRequest Request, fp::IsResponse Response, fp::IsEndpointCallback<Request, Response> Func>
-	auto Endpoint<Request, Response, Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> void {
+	template <fp::IsEndpointCallback Func>
+	auto Endpoint<Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> void {
 		std::thread([&, this](fp::Socket &&connection){
 			fp::Socket clientConnection {std::move(connection)};
 			Request request {};
