@@ -7,6 +7,7 @@
 #include "fp/endpoint.hpp"
 #include "fp/httpMethod.hpp"
 #include "fp/result.hpp"
+#include "fp/routeString.hpp"
 #include "fp/socket.hpp"
 
 
@@ -26,8 +27,8 @@ namespace fp {
 			[[nodiscard]] auto run() noexcept -> fp::Result;
 
 			template <typename Func>
-			auto get(std::string_view route, Func &&callback) noexcept -> void {
-				this->m_addEndpoint<Func> (fp::HttpMethod::eGet, route, std::move(callback));
+			auto get(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+				this->m_addEndpoint<Func> (fp::HttpMethod::eGet, route.getString(), std::move(callback));
 			}
 
 

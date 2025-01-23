@@ -7,11 +7,14 @@
 #include <tuple>
 
 #include "fp/header.hpp"
+#include "fp/routeString.hpp"
 
 
 namespace fp {
 	template <typename Request>
-	concept IsRequest = requires (Request req, const Request constReq, typename Request::Header) {
+	concept IsRequest = requires (Request req, const Request constReq) {
+		typename Request::Header;
+		typename Request::Route;
 		{req.markRuntimeReady()} -> std::same_as<void>;
 		{req.getHeader()} -> std::same_as<typename Request::Header&>;
 		{constReq.getHeader()} -> std::same_as<const typename Request::Header&>;
@@ -21,6 +24,7 @@ namespace fp {
 	class Request {
 		public:
 			using Header = RequestHeader<Body>;
+			using Route = RouteString<Params...>;
 
 			constexpr Request() noexcept = default;
 
@@ -56,6 +60,7 @@ namespace fp {
 	class Request<void, Params...> {
 		public:
 			using Header = RequestHeader<void>;
+			using Route = RouteString<Params...>;
 
 			constexpr Request() noexcept = default;
 
@@ -88,6 +93,7 @@ namespace fp {
 	class Request<Body> {
 		public:
 			using Header = RequestHeader<Body>;
+			using Route = RouteString<>;
 
 			constexpr Request() noexcept = default;
 
@@ -108,6 +114,7 @@ namespace fp {
 	class Request<void> {
 		public:
 			using Header = RequestHeader<void>;
+			using Route = RouteString<>;
 
 			constexpr Request() noexcept = default;
 
