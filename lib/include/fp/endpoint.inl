@@ -22,8 +22,9 @@ namespace fp {
 	auto Endpoint<Request, Response, Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> void {
 		std::thread([&, this](fp::Socket &&connection){
 			fp::Socket clientConnection {std::move(connection)};
+			Request request {};
 			Response response {};
-			fp::HttpCode code {this->m_callback({}, response)};
+			fp::HttpCode code {this->m_callback(request, response)};
 			response.serialize();
 
 			std::string html {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
