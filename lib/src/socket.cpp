@@ -38,6 +38,10 @@ namespace fp {
 		if (m_socket == -1)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't create socket");
 
+		int reuse {1};
+		if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) != 0)
+			return fp::ErrorStack::push(fp::Result::eFailure, "Can't set socket to reuse");
+
 		sockaddr_in6 serverAddress {};
 		serverAddress.sin6_family = AF_INET6;
 		serverAddress.sin6_port = htons(createInfos.port);

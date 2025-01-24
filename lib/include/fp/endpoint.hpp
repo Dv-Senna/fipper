@@ -29,14 +29,13 @@ namespace fp {
 	class EndpointBase {
 		public:
 			EndpointBase() noexcept = delete;
-			constexpr EndpointBase(fp::HttpMethod method, std::string_view route) noexcept : m_method {method}, m_route {route} {}
+			constexpr EndpointBase(fp::HttpMethod method) noexcept : m_method {method} {}
 			~EndpointBase() = default;
 
 			virtual auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void = 0;
 
 		protected:
 			fp::HttpMethod m_method;
-			std::string_view m_route;
 	};
 
 
@@ -45,9 +44,10 @@ namespace fp {
 		public:
 			using Request = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>;
 			using Response = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 1>>;
+			using Route = typename Request::Route;
 
 			Endpoint() noexcept = delete;
-			constexpr Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept;
+			constexpr Endpoint(fp::HttpMethod method, Route route, Func &&callback) noexcept;
 			~Endpoint() = default;
 
 			auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void override;
@@ -55,6 +55,7 @@ namespace fp {
 
 		private:
 			Func &&m_callback;
+			Route m_route;
 	};
 
 } // namespace fp

@@ -1,6 +1,7 @@
 #include "fp/server.hpp"
 
 #include <csignal>
+#include <map>
 #include <print>
 #include <unistd.h>
 
@@ -22,6 +23,14 @@ namespace fp {
 	auto Server::run() noexcept -> fp::Result {
 		using namespace std::literals;
 		(void)std::signal(SIGINT, Server::s_signalHandler);
+
+		std::map<std::string_view, fp::HttpMethod> methodMap {
+			{"GET", fp::HttpMethod::eGet},
+			{"PUT", fp::HttpMethod::ePut},
+			{"POST", fp::HttpMethod::ePost},
+			{"PATCH", fp::HttpMethod::ePatch},
+			{"DELETE", fp::HttpMethod::eDelete}
+		};
 
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
@@ -53,24 +62,28 @@ namespace fp {
 
 			auto split {std::views::split(request, ' ')};
 			std::string_view methodString {*split.begin()};
-			fp::HttpMethod method {};
-			if (methodString == "GET")
-				method = fp::HttpMethod::eGet;
-
-			auto route {m_endpoints.find(method)};
-			if (route == m_endpoints.end()) {
-				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
-					fp::ErrorStack::push("Can't send 404 after invalid method");
-					fp::ErrorStack::logAll();
+			auto method {methodMap.find(methodString)};
+			if (method == methodMap.end()) {
+				if (clientSocket.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
+					fp::ErrorStack::push("Can't send 400 after invalid method name");
 				}
 				continue;
 			}
 
 			std::string_view routeString {*++split.begin()};
-			auto endpoint {route->second.find(routeString)};
-			if (endpoint == route->second.end()) {
+			auto route {m_endpoints.find(routeString)};
+			if (route == m_endpoints.end()) {
 				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
 					fp::ErrorStack::push("Can't send 404 after invalid route");
+					fp::ErrorStack::logAll();
+				}
+				continue;
+			}
+
+			auto endpoint {route->second.find(method->second)};
+			if (endpoint == route->second.end()) {
+				if (clientSocket.send(fp::serialize("HTTP/1.1 405 Method Not Allowed"sv)->data) != fp::Result::eSuccess) {
+					fp::ErrorStack::push("Can't send 405 after invalid method");
 					fp::ErrorStack::logAll();
 				}
 				continue;

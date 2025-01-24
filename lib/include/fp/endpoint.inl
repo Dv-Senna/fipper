@@ -10,9 +10,10 @@
 
 namespace fp {
 	template <fp::IsEndpointCallback Func>
-	constexpr Endpoint<Func>::Endpoint(fp::HttpMethod method, std::string_view route, Func &&callback) noexcept :
-		EndpointBase(method, route),
-		m_callback {std::move(callback)}
+	constexpr Endpoint<Func>::Endpoint(fp::HttpMethod method, Route route, Func &&callback) noexcept :
+		EndpointBase(method),
+		m_callback {std::move(callback)},
+		m_route {route}
 	{
 
 	}
@@ -29,7 +30,7 @@ namespace fp {
 
 			std::string html {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
 			std::string responseData {std::format("HTTP/1.1 {} {}\r\nContent-Type: text/html\r\nContent-Lenght: {}\r\n\r\n{}",
-				fp::utils::toString<fp::HttpCode> (code),
+				std::to_string(static_cast<std::int32_t> (code)),
 				fp::getHttpCodeString(code).value_or(""),
 				html.size(),
 				html
