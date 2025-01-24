@@ -50,7 +50,7 @@ namespace fp {
 	template <typename ...Params>
 	template <std::size_t N>
 	consteval RouteString<Params...>::RouteString(const char (&str)[N]) noexcept :
-		RouteString({str, str + N})
+		RouteString({str, str + N - 1})
 	{
 
 	}
@@ -111,7 +111,7 @@ namespace fp {
 
 	template <std::size_t N>
 	consteval RouteString<>::RouteString(const char (&str)[N]) noexcept :
-		RouteString(std::string_view{str, str + N})
+		RouteString(std::string_view{str, str + N - 1})
 	{
 
 	}
