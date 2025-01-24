@@ -56,11 +56,17 @@ namespace fp {
 	}
 
 
-	auto Socket::accept() noexcept -> std::optional<Socket> {
+	auto Socket::accept(std::chrono::milliseconds timeout) noexcept -> std::expected<Socket, fp::Result> {
+		auto dataToRecieve {this->hasDataToRecieve(timeout)};
+		if (!dataToRecieve)
+			return fp::ErrorStack::push(std::unexpected(fp::Result::eFailure), "Can't check for socket to accept");
+		if (!*dataToRecieve)
+			return std::unexpected(fp::Result::eNothingToAccept);
+
 		Socket socket {};
 		socket.m_socket = ::accept(m_socket, nullptr, nullptr);
 		if (socket.m_socket == -1)
-			return fp::ErrorStack::push(std::nullopt, "Can't accept socket");
+			return fp::ErrorStack::push(std::unexpected(fp::Result::eFailure), "Can't accept socket");
 		return socket;
 	}
 
@@ -70,8 +76,11 @@ namespace fp {
 		fd.fd = m_socket;
 		fd.events = POLLIN;
 
-		if (poll(&fd, 1, timeout.count()) < 0)
+		if (poll(&fd, 1, timeout.count()) < 0) {
+			if (errno == EINTR)
+				return false;
 			return fp::ErrorStack::push(std::nullopt, "Can't poll socket for reading");
+		}
 		if (fd.revents & POLLERR || fd.revents & POLLHUP || fd.revents & POLLNVAL)
 			return fp::ErrorStack::push(std::nullopt, "Can't poll socket for reading");
 		return fd.revents & POLLIN;

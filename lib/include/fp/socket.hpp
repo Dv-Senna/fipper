@@ -36,7 +36,7 @@ namespace fp {
 			[[nodiscard]] auto create(const CreateInfos &createInfos) noexcept -> fp::Result;
 
 			[[nodiscard]] auto listen(std::uint32_t queueSizeHint = 1) noexcept -> fp::Result;
-			[[nodiscard]] auto accept() noexcept -> std::optional<Socket>;
+			[[nodiscard]] auto accept(std::chrono::milliseconds timeout = 0ms) noexcept -> std::expected<Socket, fp::Result>;
 
 			[[nodiscard]] auto hasDataToRecieve(std::chrono::milliseconds timeout = 0ms) noexcept -> std::optional<bool>;
 			template <std::size_t BUFFER_SIZE = 1024>

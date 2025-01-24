@@ -9,6 +9,7 @@ namespace fp {
 	enum class Result : std::int32_t {
 		eSuccess = 0,
 		eNothingToRecieve = 1,
+		eNothingToAccept = 2,
 		eFailure = -1
 	};
 

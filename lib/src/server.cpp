@@ -1,7 +1,6 @@
 #include "fp/server.hpp"
 
 #include <csignal>
-#include <future>
 #include <print>
 #include <unistd.h>
 
@@ -31,21 +30,14 @@ namespace fp {
 		std::println("Server listening");
 		std::println("\tFor local use : \033]8;;localhost:{0}\033\\localhost:{0}\033]8;;\033\\", m_port);
 
-		std::optional<std::future<std::optional<fp::Socket>>> clientSocketPromise {};
-
 		while (!s_endSignal) {
-			if (!clientSocketPromise) {
-				clientSocketPromise = std::async([this](){return this->m_serverSocket.accept();});
-				continue;
+			auto clientSocketWithError {m_serverSocket.accept(1000ms)};
+			if (!clientSocketWithError) {
+				if (clientSocketWithError.error() == fp::Result::eNothingToAccept)
+					continue;
+				return fp::ErrorStack::push(fp::Result::eFailure, "Can't accept client socket");
 			}
 
-			if (clientSocketPromise->wait_for(1000ms) != std::future_status::ready)
-				continue;
-
-			auto clientSocketWithError {clientSocketPromise->get()};
-			clientSocketPromise = std::nullopt;
-			if (!clientSocketWithError)
-				return fp::ErrorStack::push(fp::Result::eFailure, "Can't accept client socket");
 			fp::Socket &clientSocket {*clientSocketWithError};
 
 			auto hasDataToRecieveWithError {clientSocket.hasDataToRecieve(1000ms)};
@@ -88,7 +80,6 @@ namespace fp {
 			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
 		}
 
-		new (&clientSocketPromise) decltype(clientSocketPromise)(std::nullopt);
 		return fp::Result::eSuccess;
 	}
 
@@ -98,5 +89,5 @@ namespace fp {
 	}
 
 
-	bool Server::s_endSignal {false};
+	std::atomic_bool Server::s_endSignal {false};
 } // namespace fp
