@@ -1,8 +1,10 @@
 #pragma once
 
 #include <atomic>
+#include <latch>
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "fp/core.hpp"
@@ -20,6 +22,8 @@ namespace fp {
 		public:
 			struct CreateInfos {
 				std::uint16_t port;
+				std::size_t latchsReservedCount {16};
+				std::size_t socketQueueSizeHint {16};
 			};
 
 			Server() noexcept = default;
@@ -58,13 +62,16 @@ namespace fp {
 			template <typename Func, typename RouteString>
 			auto m_addEndpoint(fp::HttpMethod method, RouteString route, Func &&callback) noexcept -> void;
 
-			auto m_handleRequest(fp::Socket &&connection, std::string request) const noexcept -> void;
+			auto m_getLatch() noexcept -> std::shared_ptr<std::latch>;
+			auto m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> void;
 
 			static auto s_signalHandler(int signal) noexcept -> void;
 			static std::atomic_bool s_endSignal;
 
 			std::uint16_t m_port;
+			std::size_t m_socketQueueSizeHint;
 			std::vector<std::pair<std::unique_ptr<fp::RouteStringBase>, std::map<fp::HttpMethod, std::unique_ptr<fp::EndpointBase>>>> m_endpoints;
+			std::vector<std::optional<std::shared_ptr<std::latch>>> m_latchs;
 			fp::Socket m_serverSocket;
 	};
 

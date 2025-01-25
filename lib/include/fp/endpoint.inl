@@ -3,10 +3,8 @@
 #include "fp/endpoint.hpp"
 
 #include <format>
-#include <thread>
 
 #include "fp/errorStack.hpp"
-#include "fp/utils/janitor.hpp"
 
 
 namespace fp {
@@ -21,9 +19,8 @@ namespace fp {
 
 
 	template <fp::IsEndpointCallback Func>
-	auto Endpoint<Func>::handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) const noexcept -> void {
+	auto Endpoint<Func>::handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> void {
 		fp::Socket clientConnection {std::move(connection)};
-		fp::utils::Janitor _ {[&]() noexcept {latch->count_down();}};
 
 		auto split {std::views::split(requestString, ' ')};
 		std::string_view requestRoute {*++split.begin()};

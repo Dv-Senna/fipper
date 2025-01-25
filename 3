@@ -59,34 +59,17 @@ namespace fp {
 			this->m_handleRequest(std::move(clientSocket), std::string{(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()});
 		}
 
-		for (const auto &latch : m_latchs) {
-			if (!!latch)
-				(*latch)->wait();
-		}
 		return fp::Result::eSuccess;
 	}
 
 
-	auto Server::m_getLatch() noexcept -> std::shared_ptr<std::latch> {
+	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) const noexcept -> void {
 		for (auto &latch : m_latchs) {
-			if (!!latch) {
-				if ((*latch)->try_wait())
-					latch = std::nullopt;
-			}
+			if (latch->try_wait())
+				latch = std::shared_ptr<std::latch> (nullptr);
 		}
 
-		auto it {std::ranges::find_if(m_latchs, [](auto &latch) {return !latch;})};
-		if (it == m_latchs.end())
-			it = m_latchs.insert(it, std::nullopt);
-		*it = std::make_shared<std::latch> (1);
-		return **it;
-	}
-
-
-	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> void {
-		std::shared_ptr<std::latch> latch {this->m_getLatch()};
-
-		std::thread([this](std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string &&requestString) noexcept {
+		std::thread([this](fp::Socket &&connection, std::string &&requestString) noexcept {
 			static const std::map<std::string_view, fp::HttpMethod> methodMap {
 				{"GET", fp::HttpMethod::eGet},
 				{"PUT", fp::HttpMethod::ePut},
@@ -94,8 +77,6 @@ namespace fp {
 				{"PATCH", fp::HttpMethod::ePatch},
 				{"DELETE", fp::HttpMethod::eDelete}
 			};
-
-			fp::utils::Janitor _ {[&latch]() noexcept {latch->count_down();}};
 
 			fp::Socket clientSocket {std::move(connection)};
 			std::string request {std::move(requestString)};
@@ -130,7 +111,7 @@ namespace fp {
 			}
 
 			endpoint->second->handleRequest(std::move(clientSocket), request);
-		}, latch, std::move(connection), std::move(request)).detach();
+		}, std::move(connection), std::move(request)).detach();
 	}
 
 
