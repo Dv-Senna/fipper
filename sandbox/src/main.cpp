@@ -28,18 +28,19 @@ int main() {
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
 		return fp::ErrorStack::push(1, "Can't create server");
 
-	server.get("/", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
-		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>This is the root get</h1></body></html>");
-		return fp::HttpCode::e200;
-	});
-
 	server.get("/{name:not_empty}", [](const fp::Request<void, std::string> &request, fp::Response<std::string> &response) noexcept {
 		auto name {**request.getParam<std::string> ("name")};
 		response.header.contentType = fp::ContentType::eHtml;
 		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>Hello World {} !</h1></body></html>", name);
 		return fp::HttpCode::e200;
 	});
+
+	server.get("/", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
+		response.header.contentType = fp::ContentType::eHtml;
+		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>This is the root get</h1></body></html>");
+		return fp::HttpCode::e200;
+	});
+
 
 	if (server.run() != fp::Result::eSuccess)
 		return fp::ErrorStack::push(1, "Can't run server");

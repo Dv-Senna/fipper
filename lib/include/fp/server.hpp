@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -34,17 +33,30 @@ namespace fp {
 				this->m_addEndpoint<Func> (fp::HttpMethod::eGet, route, std::move(callback));
 			}
 
+			template <typename Func>
+			auto post(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+				this->m_addEndpoint<Func> (fp::HttpMethod::ePost, route, std::move(callback));
+			}
+
+			template <typename Func>
+			auto put(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+				this->m_addEndpoint<Func> (fp::HttpMethod::ePut, route, std::move(callback));
+			}
+
+			template <typename Func>
+			auto patch(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+				this->m_addEndpoint<Func> (fp::HttpMethod::ePatch, route, std::move(callback));
+			}
+
+			template <typename Func>
+			auto delete_(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+				this->m_addEndpoint<Func> (fp::HttpMethod::eDelete, route, std::move(callback));
+			}
+
 
 		private:
 			template <typename Func, typename RouteString>
-			auto m_addEndpoint(fp::HttpMethod method, RouteString route, Func &&callback) noexcept -> void {
-				auto it {std::ranges::find_if(m_endpoints, [&route](const auto &endpoint){return *endpoint.first == route;})};
-				if (it == m_endpoints.end()) {
-					m_endpoints.push_back({std::make_unique<RouteString> (route), {}});
-					it = m_endpoints.end() - 1;
-				}
-				it->second[method] = std::make_unique<fp::Endpoint<Func>> (method, route, std::move(callback));
-			}
+			auto m_addEndpoint(fp::HttpMethod method, RouteString route, Func &&callback) noexcept -> void;
 
 			static auto s_signalHandler(int signal) noexcept -> void;
 			static std::atomic_bool s_endSignal;
@@ -55,3 +67,5 @@ namespace fp {
 	};
 
 } // namespace fp
+
+#include "fp/server.inl"
