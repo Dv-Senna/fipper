@@ -12,6 +12,9 @@ set(PROJECT_CPP_DIALECT 23)
 
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 
+add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
+add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
+
 add_subdirectory(lib)
 add_subdirectory(sandbox)
 if (BUILD_TESTS)

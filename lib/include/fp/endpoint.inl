@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "fp/errorStack.hpp"
+#include "fp/utils/janitor.hpp"
 
 
 namespace fp {
@@ -20,18 +21,31 @@ namespace fp {
 
 
 	template <fp::IsEndpointCallback Func>
-	auto Endpoint<Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void {
-		std::thread([&, this](fp::Socket &&connection){
+	auto Endpoint<Func>::handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void {
+		std::string requestStringOwnership {requestString};
+		std::thread([this](std::shared_ptr<std::latch> &&latchParam, fp::Socket &&connection, std::string &&requestStringParam){
+			std::shared_ptr<std::latch> latch {std::move(latchParam)};
 			fp::Socket clientConnection {std::move(connection)};
+			std::string requestString {std::move(requestStringParam)};
+			fp::utils::Janitor _ {[&]() noexcept {latch->count_down();}};
 
 			auto split {std::views::split(requestString, ' ')};
 			std::string_view requestRoute {*++split.begin()};
 
 			Request request {};
-			request.setParamNames(m_route.getParamNames());
-			request.markRuntimeReady();
-			if constexpr (std::same_as<typename Request::HasParams, std::true_type>)
-				request.getParams() = m_route.extractParamsFromInstance(requestRoute);
+			if constexpr (std::same_as<typename Request::HasParams, std::true_type>) {
+				std::optional params {m_route.extractParamsFromInstance(requestRoute)};
+				if (!params) {
+					if (clientConnection.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
+						fp::ErrorStack::push("Can't send response of invalid parameter of route");
+						fp::ErrorStack::logAll();
+					}
+					return;
+				}
+				request.setParamNames(m_route.getParamNames());
+				request.markRuntimeReady();
+				request.setParams(std::move(*params));
+			}
 
 			Response response {};
 			fp::HttpCode code {this->m_callback(request, response)};
@@ -48,8 +62,7 @@ namespace fp {
 				fp::ErrorStack::push("Can't send response of route");
 				fp::ErrorStack::logAll();
 			}
-			latch.count_down();
-		}, std::move(connection)).detach();
+		}, std::move(latch), std::move(connection), std::move(requestStringOwnership)).detach();
 	}
 
 } // namespace fp

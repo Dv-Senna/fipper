@@ -148,13 +148,35 @@ namespace fp {
 	namespace __internals {
 		template <std::size_t index = 0, typename First, typename ...Params, typename ...Extractors>
 		constexpr auto __extractParamFromRouteString(
-			std::string_view::iterator beginTemplate, std::string_view endTemplate,
-			std::string_view::iterator beginInstance, std::string_view endInstance,
-			std::tuple<RouteStringExtractor<Extractors>...> &m_extractors
+			std::string_view::iterator beginTemplate, std::string_view::iterator endTemplate,
+			std::string_view::iterator beginInstance, std::string_view::iterator endInstance,
+			const std::tuple<RouteStringExtractor<Extractors>...> &m_extractors
 		) -> std::optional<std::tuple<First, Params...>> {
 			auto it {std::find(beginTemplate, endTemplate, '{')};
 			std::ptrdiff_t length {std::distance(beginTemplate, it)};
+			beginTemplate = it;
 			beginInstance += length;
+
+			it = std::find(beginInstance, endInstance, '/');
+			std::optional<First> result {std::get<index> (m_extractors).extract(std::string_view{beginInstance, it})};
+			if (!result)
+				return std::nullopt;
+
+			beginTemplate = std::find(it, endTemplate, '/');
+			beginInstance = it;
+
+			if constexpr (sizeof...(Params) != 0) {
+				std::optional<std::tuple<Params...>> nextResults {__extractParamFromRouteString<index + 1, Params...> (
+					beginTemplate, endTemplate,
+					beginInstance, endInstance,
+					m_extractors
+				)};
+				if (!nextResults)
+					return std::nullopt;
+				return std::tuple_cat(std::make_tuple<First> (*result), *nextResults);
+			}
+
+			return std::make_tuple<First> (std::move(*result));
 		}
 
 	} // namespace __internals
@@ -162,7 +184,7 @@ namespace fp {
 
 	template <typename ...Params>
 	constexpr auto RouteString<Params...>::extractParamsFromInstance(std::string_view route) const noexcept -> std::optional<std::tuple<Params...>> {
-		return __internals::__extractParamFromRouteString(
+		return __internals::__extractParamFromRouteString<0, Params...> (
 			m_str.begin(), m_str.end(),
 			route.begin(), route.end(),
 			m_extractors
@@ -207,7 +229,7 @@ namespace fp {
 	}
 
 
-	auto RouteStringExtractor<std::string>::extract(std::string_view str) noexcept -> std::optional<std::string> {
+	auto RouteStringExtractor<std::string>::extract(std::string_view str) const noexcept -> std::optional<std::string> {
 		if (notEmpty && str.empty())
 			return std::nullopt;
 		return std::string{str};

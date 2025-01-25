@@ -80,7 +80,7 @@ namespace fp {
 			bool notEmpty {false};
 
 			constexpr auto instantiate(std::string_view str) -> void;
-			inline auto extract(std::string_view str) noexcept -> std::optional<std::string>;
+			inline auto extract(std::string_view str) const noexcept -> std::optional<std::string>;
 	};
 
 } // namespace fp

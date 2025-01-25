@@ -1,6 +1,7 @@
 #pragma once
 
 #include <latch>
+#include <memory>
 #include <string_view>
 
 #include "fp/httpCode.hpp"
@@ -30,9 +31,9 @@ namespace fp {
 		public:
 			EndpointBase() noexcept = delete;
 			constexpr EndpointBase(fp::HttpMethod method) noexcept : m_method {method} {}
-			~EndpointBase() = default;
+			virtual ~EndpointBase() = default;
 
-			virtual auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void = 0;
+			virtual auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void = 0;
 
 		protected:
 			fp::HttpMethod m_method;
@@ -48,9 +49,9 @@ namespace fp {
 
 			Endpoint() noexcept = delete;
 			constexpr Endpoint(fp::HttpMethod method, Route route, Func &&callback) noexcept;
-			~Endpoint() = default;
+			~Endpoint() override = default;
 
-			auto handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void override;
+			auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void override;
 
 
 		private:

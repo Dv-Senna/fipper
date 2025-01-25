@@ -41,6 +41,8 @@ namespace fp {
 			constexpr auto getBody() noexcept -> std::enable_if_t<!std::is_void_v<Body>, Body&> {return m_body;}
 			constexpr auto getBody() const noexcept -> std::enable_if_t<!std::is_void_v<Body>, const Body&> {return m_body;}
 
+			constexpr auto setParams(std::tuple<Params...> &&params) noexcept -> void {m_params = std::move(params);}
+
 			template <std::size_t index>
 			requires (index < sizeof...(Params))
 			constexpr auto getParam() noexcept -> std::tuple_element_t<index, std::tuple<Params...>>& {return std::get<index> (m_params);}
@@ -75,6 +77,8 @@ namespace fp {
 
 			constexpr auto getHeader() noexcept -> RequestHeader<void>& {return m_header;}
 			constexpr auto getHeader() const noexcept -> const RequestHeader<void>& {return m_header;}
+
+			constexpr auto setParams(std::tuple<Params...> &&params) noexcept -> void {m_params = std::move(params);}
 
 			template <std::size_t index>
 			requires (index < sizeof...(Params))

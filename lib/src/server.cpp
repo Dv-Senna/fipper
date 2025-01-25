@@ -89,7 +89,7 @@ namespace fp {
 				continue;
 			}
 
-			std::latch latch {1};
+			auto latch {std::make_shared<std::latch> (1)};
 			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
 		}
 

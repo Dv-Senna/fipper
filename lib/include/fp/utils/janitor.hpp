@@ -19,7 +19,7 @@ namespace fp::utils {
 			constexpr Janitor(Func2 &&func) noexcept : m_func {std::move(func)} {}
 		
 		private:
-			Func &&m_func;
+			Func m_func;
 	};
 
 	
