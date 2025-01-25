@@ -29,7 +29,7 @@ int main() {
 		return fp::ErrorStack::push(1, "Can't create server");
 
 	std::atomic_int connectionCount {};
-	server.get("/", [&connectionCount](const fp::Request<void> &, fp::Response<std::string> &response) noexcept {
+	server.get("/{name:not_empty}", [&connectionCount](const fp::Request<void, std::string> &, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eHtml;
 		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>Hello World for the {}th time !</h1></body></html>", ++connectionCount);
 		return fp::HttpCode::e200;

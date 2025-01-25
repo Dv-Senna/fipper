@@ -20,10 +20,19 @@ namespace fp {
 
 
 	template <fp::IsEndpointCallback Func>
-	auto Endpoint<Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view) noexcept -> void {
+	auto Endpoint<Func>::handleRequest(std::latch &latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void {
 		std::thread([&, this](fp::Socket &&connection){
 			fp::Socket clientConnection {std::move(connection)};
+
+			auto split {std::views::split(requestString, ' ')};
+			std::string_view requestRoute {*++split.begin()};
+
 			Request request {};
+			request.setParamNames(m_route.getParamNames());
+			request.markRuntimeReady();
+			if constexpr (std::same_as<typename Request::HasParams, std::true_type>)
+				request.getParams() = m_route.extractParamsFromInstance(requestRoute);
+
 			Response response {};
 			fp::HttpCode code {this->m_callback(request, response)};
 			response.serialize();

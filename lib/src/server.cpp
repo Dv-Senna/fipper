@@ -71,7 +71,7 @@ namespace fp {
 			}
 
 			std::string_view routeString {*++split.begin()};
-			auto route {m_endpoints.find(routeString)};
+			auto route {std::ranges::find_if(m_endpoints, [&routeString](const auto &endpoint){return endpoint.first->isInstance(routeString);})};
 			if (route == m_endpoints.end()) {
 				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
 					fp::ErrorStack::push("Can't send 404 after invalid route");
