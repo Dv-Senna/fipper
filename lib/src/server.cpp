@@ -24,14 +24,6 @@ namespace fp {
 		using namespace std::literals;
 		(void)std::signal(SIGINT, Server::s_signalHandler);
 
-		std::map<std::string_view, fp::HttpMethod> methodMap {
-			{"GET", fp::HttpMethod::eGet},
-			{"PUT", fp::HttpMethod::ePut},
-			{"POST", fp::HttpMethod::ePost},
-			{"PATCH", fp::HttpMethod::ePatch},
-			{"DELETE", fp::HttpMethod::eDelete}
-		};
-
 		if (m_serverSocket.listen() != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
 
@@ -58,7 +50,26 @@ namespace fp {
 			auto requestWithError {clientSocket.recieve()};
 			if (!requestWithError)
 				return fp::ErrorStack::push(fp::Result::eFailure, "Can't read data for client socket");
-			std::string request {(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()};
+
+			this->m_handleRequest(std::move(clientSocket), std::string{(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()});
+		}
+
+		return fp::Result::eSuccess;
+	}
+
+
+	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) const noexcept -> void {
+		std::thread([this](fp::Socket &&connection, std::string &&requestString) noexcept {
+			static const std::map<std::string_view, fp::HttpMethod> methodMap {
+				{"GET", fp::HttpMethod::eGet},
+				{"PUT", fp::HttpMethod::ePut},
+				{"POST", fp::HttpMethod::ePost},
+				{"PATCH", fp::HttpMethod::ePatch},
+				{"DELETE", fp::HttpMethod::eDelete}
+			};
+
+			fp::Socket clientSocket {std::move(connection)};
+			std::string request {std::move(requestString)};
 
 			auto split {std::views::split(request, ' ')};
 			std::string_view methodString {*split.begin()};
@@ -67,7 +78,7 @@ namespace fp {
 				if (clientSocket.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
 					fp::ErrorStack::push("Can't send 400 after invalid method name");
 				}
-				continue;
+				return;
 			}
 
 			std::string_view routeString {*++split.begin()};
@@ -77,7 +88,7 @@ namespace fp {
 					fp::ErrorStack::push("Can't send 404 after invalid route");
 					fp::ErrorStack::logAll();
 				}
-				continue;
+				return;
 			}
 
 			auto endpoint {route->second.find(method->second)};
@@ -86,14 +97,12 @@ namespace fp {
 					fp::ErrorStack::push("Can't send 405 after invalid method");
 					fp::ErrorStack::logAll();
 				}
-				continue;
+				return;
 			}
 
 			auto latch {std::make_shared<std::latch> (1)};
 			endpoint->second->handleRequest(latch, std::move(clientSocket), request);
-		}
-
-		return fp::Result::eSuccess;
+		}, std::move(connection), std::move(request)).detach();
 	}
 
 

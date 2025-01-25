@@ -22,8 +22,8 @@ namespace fp {
 	template <typename Func>
 	concept IsEndpointCallback = fp::IsEndpointCallbackWithReqRes<
 		Func,
-		fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>,
-		fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 1>>
+		fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+		fp::utils::SanitizedFunctionParameter_t<Func, 1>
 	>;
 
 
@@ -33,7 +33,7 @@ namespace fp {
 			constexpr EndpointBase(fp::HttpMethod method) noexcept : m_method {method} {}
 			virtual ~EndpointBase() = default;
 
-			virtual auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void = 0;
+			virtual auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) const noexcept -> void = 0;
 
 		protected:
 			fp::HttpMethod m_method;
@@ -43,15 +43,15 @@ namespace fp {
 	template <fp::IsEndpointCallback Func>
 	class Endpoint final : public EndpointBase {
 		public:
-			using Request = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>;
-			using Response = fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 1>>;
+			using Request = fp::utils::SanitizedFunctionParameter_t<Func, 0>;
+			using Response = fp::utils::SanitizedFunctionParameter_t<Func, 1>;
 			using Route = typename Request::Route;
 
 			Endpoint() noexcept = delete;
 			constexpr Endpoint(fp::HttpMethod method, Route route, Func &&callback) noexcept;
 			~Endpoint() override = default;
 
-			auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) noexcept -> void override;
+			auto handleRequest(std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string_view requestString) const noexcept -> void override;
 
 
 		private:

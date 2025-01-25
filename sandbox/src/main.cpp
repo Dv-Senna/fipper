@@ -26,12 +26,19 @@ int main() {
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
-		return fp::ErrorStack::push(1, "Can't create server");
+		return fp::ErrorStack::push(EXIT_FAILURE, "Can't create server");
 
 	server.get("/{name:not_empty}", [](const fp::Request<void, std::string> &request, fp::Response<std::string> &response) noexcept {
 		auto name {**request.getParam<std::string> ("name")};
 		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>Hello World {} !</h1></body></html>", name);
+		response.body = std::format("<html>\
+			<head>\
+				<script src='scripts/script.js'></script>\
+			</head>\
+			<body style='background-color: #111; color: #fff;'>\
+				<h1>Hello World {} !</h1>\
+			</body>\
+		</html>", name);
 		return fp::HttpCode::e200;
 	});
 
@@ -41,9 +48,15 @@ int main() {
 		return fp::HttpCode::e200;
 	});
 
+	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
+		response.header.contentType = fp::ContentType::eJavascript;
+		response.body = "console.log('Hello World !')";
+		return fp::HttpCode::e200;
+	});
+
 
 	if (server.run() != fp::Result::eSuccess)
-		return fp::ErrorStack::push(1, "Can't run server");
+		return fp::ErrorStack::push(EXIT_FAILURE, "Can't run server");
 
-	return 0;
+	return EXIT_SUCCESS;
 }

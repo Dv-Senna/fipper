@@ -42,6 +42,9 @@ namespace fp {
 	} // namespace header
 
 
+	auto getContentTypeString(ContentType type) noexcept -> std::string_view;
+
+
 	template <typename Body>
 	struct RequestHeader : public header::RequestHeader, public header::RepresentationHeader {};
 	template <>

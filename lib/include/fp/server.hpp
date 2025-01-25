@@ -29,27 +29,27 @@ namespace fp {
 			[[nodiscard]] auto run() noexcept -> fp::Result;
 
 			template <typename Func>
-			auto get(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+			auto get(typename fp::utils::SanitizedFunctionParameter_t<Func, 0>::Route route, Func &&callback) noexcept -> void {
 				this->m_addEndpoint<Func> (fp::HttpMethod::eGet, route, std::move(callback));
 			}
 
 			template <typename Func>
-			auto post(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+			auto post(typename fp::utils::SanitizedFunctionParameter_t<Func, 0>::Route route, Func &&callback) noexcept -> void {
 				this->m_addEndpoint<Func> (fp::HttpMethod::ePost, route, std::move(callback));
 			}
 
 			template <typename Func>
-			auto put(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+			auto put(typename fp::utils::SanitizedFunctionParameter_t<Func, 0>::Route route, Func &&callback) noexcept -> void {
 				this->m_addEndpoint<Func> (fp::HttpMethod::ePut, route, std::move(callback));
 			}
 
 			template <typename Func>
-			auto patch(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+			auto patch(typename fp::utils::SanitizedFunctionParameter_t<Func, 0>::Route route, Func &&callback) noexcept -> void {
 				this->m_addEndpoint<Func> (fp::HttpMethod::ePatch, route, std::move(callback));
 			}
 
 			template <typename Func>
-			auto delete_(typename fp::utils::SanitizeParameter_t<fp::utils::FunctionParamater_t<Func, 0>>::Route route, Func &&callback) noexcept -> void {
+			auto delete_(typename fp::utils::SanitizedFunctionParameter_t<Func, 0>::Route route, Func &&callback) noexcept -> void {
 				this->m_addEndpoint<Func> (fp::HttpMethod::eDelete, route, std::move(callback));
 			}
 
@@ -57,6 +57,8 @@ namespace fp {
 		private:
 			template <typename Func, typename RouteString>
 			auto m_addEndpoint(fp::HttpMethod method, RouteString route, Func &&callback) noexcept -> void;
+
+			auto m_handleRequest(fp::Socket &&connection, std::string request) const noexcept -> void;
 
 			static auto s_signalHandler(int signal) noexcept -> void;
 			static std::atomic_bool s_endSignal;
