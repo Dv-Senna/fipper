@@ -44,14 +44,20 @@ namespace fp {
 		fp::HttpCode code {this->m_callback(request, response)};
 		response.serialize();
 
-		std::string html {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
-		std::string responseData {std::format("HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
-			std::to_string(static_cast<std::int32_t> (code)),
-			fp::getHttpCodeString(code).value_or(""),
-			fp::getContentTypeString(response.header.contentType),
-			html.size(),
-			html
-		)};
+		std::string responseData {};
+		if constexpr (std::same_as<typename Response::HasBody, std::true_type>) {
+			std::string data {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
+			responseData = std::format("HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
+				std::to_string(static_cast<std::int32_t> (code)),
+				fp::getHttpCodeString(code).value_or(""),
+				fp::getContentTypeString(response.header.contentType),
+				data.size(),
+				data
+			);
+		}
+		else
+			responseData = std::format("HTTP/1.1 {} {}", std::to_string(static_cast<std::int32_t> (code)), fp::getHttpCodeString(code).value_or(""));
+
 		if (clientConnection.send({(std::byte*)responseData.data(), (std::byte*)responseData.data() + responseData.size()}) != fp::Result::eSuccess) {
 			fp::ErrorStack::push("Can't send response of route");
 			fp::ErrorStack::logAll();

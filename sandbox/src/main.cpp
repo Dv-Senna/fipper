@@ -50,7 +50,13 @@ int main() {
 
 	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJavascript;
-		response.body = "console.log('Hello World !')";
+		response.body = "console.log('Hello World !'); fetch('/api/data').then((res)=>res.json()).then((body)=>console.log(body))";
+		return fp::HttpCode::e200;
+	});
+
+	server.get("/api/data", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
+		response.header.contentType = fp::ContentType::eJson;
+		response.body = "{\"name\": \"Michel\", \"surname\": \"Michel\", \"age\": 72}";
 		return fp::HttpCode::e200;
 	});
 
