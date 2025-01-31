@@ -17,6 +17,7 @@ add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
 
 add_subdirectory(lib)
 add_subdirectory(sandbox)
+add_subdirectory(loader)
 if (BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
