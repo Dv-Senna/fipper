@@ -55,7 +55,6 @@ int main() {
 	});
 
 	server.get("/api/data", [](const fp::Request<void>&, fp::Response<nlohmann::json> &response) noexcept {
-		response.header.contentType = fp::ContentType::eJson;
 		response.body["name"] = "Michel";
 		response.body["surname"] = "Michel";
 		response.body["age"] = 72;
