@@ -66,4 +66,10 @@ namespace fp {
 		return serialize(std::to_string(data));
 	}
 
+
+	template <>
+	FP_CORE auto serialize<nlohmann::json> (const nlohmann::json &data) noexcept -> std::optional<Serialized>{
+		return serialize(std::string{data.dump()});
+	}
+
 } // namespace fp

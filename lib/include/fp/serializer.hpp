@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "fp/core.hpp"
 #include "fp/header.hpp"
 
@@ -47,5 +49,8 @@ namespace fp {
 	FP_CORE auto serialize<double> (const double &) noexcept -> std::optional<Serialized>;
 	template <>
 	FP_CORE auto serialize<long double> (const long double &) noexcept -> std::optional<Serialized>;
+
+	template <>
+	FP_CORE auto serialize<nlohmann::json> (const nlohmann::json &) noexcept -> std::optional<Serialized>;
 
 } // namespace fp

@@ -10,8 +10,6 @@
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
 
-#include <nlohmann/json.hpp>
-
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -56,9 +54,11 @@ int main() {
 		return fp::HttpCode::e200;
 	});
 
-	server.get("/api/data", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
+	server.get("/api/data", [](const fp::Request<void>&, fp::Response<nlohmann::json> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJson;
-		response.body = "{\"name\": \"Michel\", \"surname\": \"Michel\", \"age\": 72}";
+		response.body["name"] = "Michel";
+		response.body["surname"] = "Michel";
+		response.body["age"] = 72;
 		return fp::HttpCode::e200;
 	});
 
