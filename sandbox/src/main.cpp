@@ -9,7 +9,6 @@
 #include <fp/utils/janitor.hpp>
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
-#include <fp/main.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -19,7 +18,7 @@
 using namespace std::literals;
 
 
-auto fp::applicationMain() noexcept -> fp::Result {
+int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
 	}};
@@ -27,20 +26,19 @@ auto fp::applicationMain() noexcept -> fp::Result {
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
-		return fp::ErrorStack::push(fp::Result::eFailure, "Can't create server");
+		return fp::ErrorStack::push(EXIT_FAILURE, "Can't create server");
 
 	server.get("/{name:not_empty}", [](const fp::Request<void, std::string> &request, fp::Response<std::string> &response) noexcept {
 		auto name {**request.getParam<std::string> ("name")};
 		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format(R"(<!DOCTYPE html>
-		<html lang='en'>
-			<head>
-				<script src='scripts/script.js'></script>
-			</head>
-			<body style='background-color: #111; color: #fff;'>
-				<h1>Hello World {} !</h1>
-			</body>
-		</html>)", name);
+		response.body = std::format("<html>\
+			<head>\
+				<script src='scripts/script.js'></script>\
+			</head>\
+			<body style='background-color: #111; color: #fff;'>\
+				<h1>Hello World {} !</h1>\
+			</body>\
+		</html>", name);
 		return fp::HttpCode::e200;
 	});
 
@@ -52,14 +50,11 @@ auto fp::applicationMain() noexcept -> fp::Result {
 
 	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJavascript;
-		response.body = R"(console.log('Hello World !');
-			fetch('/api/data', {method: 'POST', body: JSON.stringify({name: 'Michel'})}).then(
-				(res)=>res.json()).then(
-				(body)=>console.log(body)))";
+		response.body = "console.log('Hello World !'); fetch('/api/data').then((res)=>res.json()).then((body)=>console.log(body))";
 		return fp::HttpCode::e200;
 	});
 
-	server.post("/api/data", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
+	server.get("/api/data", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJson;
 		response.body = "{\"name\": \"Michel\", \"surname\": \"Michel\", \"age\": 72}";
 		return fp::HttpCode::e200;
@@ -67,7 +62,7 @@ auto fp::applicationMain() noexcept -> fp::Result {
 
 
 	if (server.run() != fp::Result::eSuccess)
-		return fp::ErrorStack::push(fp::Result::eFailure, "Can't run server");
+		return fp::ErrorStack::push(EXIT_FAILURE, "Can't run server");
 
-	return fp::Result::eSuccess;
+	return EXIT_SUCCESS;
 }
