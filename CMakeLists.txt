@@ -12,6 +12,10 @@ set(PROJECT_CPP_DIALECT 23)
 
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 
+add_subdirectory(vendors/nlohmann_json)
+
+set(PROJECT_DEPS_LIBS nlohmann_json::nlohmann_json)
+
 add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
 add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
 

@@ -10,6 +10,8 @@
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
 
+#include <nlohmann/json.hpp>
+
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
