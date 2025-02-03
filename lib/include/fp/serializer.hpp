@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -52,5 +53,27 @@ namespace fp {
 
 	template <>
 	FP_CORE auto serialize<nlohmann::json> (const nlohmann::json &) noexcept -> std::optional<Serialized>;
+
+
+	class FP_CORE SerializerBase {
+		public:
+			virtual auto serialize(std::any) const noexcept -> std::optional<Serialized> = 0;
+	};
+
+	template <typename T>
+	class Serializer final : public SerializerBase {
+		public:
+			auto serialize(std::any data) const noexcept -> std::optional<Serialized> override {
+				return fp::serialize(std::any_cast<T> (data));
+			}
+
+			static Serializer<T> instance;
+
+		private:
+			Serializer() noexcept = default;
+	};
+
+	template <typename T>
+	Serializer<T> Serializer<T>::instance {};
 
 } // namespace fp

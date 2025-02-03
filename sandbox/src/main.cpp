@@ -17,12 +17,45 @@
 
 using namespace std::literals;
 
+#define REMOVE_PARENTHESIS(...) __VA_ARGS__
+#define VAR_CREATE_EXPR(...)
+
+#define REFLECT(name, ...)
+
+REFLECT(Foo,
+	(int) a,
+	(std::string) b
+);
+
+struct Foo {
+	using HasReflection = std::true_type;
+
+	using Members = std::tuple<int, std::string, nlohmann::json>;
+	constexpr static std::array<std::string_view, 3> names {"a", "b", "c"};
+	constexpr static std::array<fp::SerializerBase*, 3> serializers {
+		&fp::Serializer<int>::instance,
+		&fp::Serializer<std::string>::instance,
+		&fp::Serializer<nlohmann::json>::instance
+	};
+
+	int a;
+	std::string b;
+	nlohmann::json c;
+};
+
 
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
 	}};
 
+	nlohmann::json json {};
+	json["hello"] = "world";
+	auto serialized {Foo::serializers[2]->serialize(json)};
+	std::string str {(const char*)serialized->data.data(), (const char*)serialized->data.data() + serialized->data.size()};
+	std::println("SER : {}", str);
+
+	return EXIT_SUCCESS;
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
