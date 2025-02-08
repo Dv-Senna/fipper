@@ -47,26 +47,22 @@ int main() {
 				<h1>Hello World {0} !</h1>\
 			</body>\
 		</html>", name);
-		return fp::HttpCode::e200;
 	});
 
 	server.get("/", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eHtml;
 		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>This is the root get</h1></body></html>");
-		return fp::HttpCode::e200;
 	});
 
 	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJavascript;
 		response.body = "console.log('Hello World !'); fetch('/api/data').then((res)=>res.json()).then((body)=>console.log(body))";
-		return fp::HttpCode::e200;
 	});
 
 	server.get("/api/data", [](const fp::Request<void>&, fp::Response<Person> &response) noexcept {
 		response.body.name = "Michel";
 		response.body.surname = "Michel";
 		response.body.age = 72;
-		return fp::HttpCode::e200;
 	});
 
 

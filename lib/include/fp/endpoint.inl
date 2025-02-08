@@ -53,7 +53,11 @@ namespace fp {
 		}*/
 
 		Response response {};
-		fp::HttpCode code {this->m_callback(request, response)};
+		fp::HttpCode code {fp::HttpCode::e200};
+		if constexpr (fp::IsHttpReturningEndpointCallback<Func>)
+			code = this->m_callback(request, response);
+		else
+			this->m_callback(request, response);
 		response.serialize();
 
 		std::string responseData {};

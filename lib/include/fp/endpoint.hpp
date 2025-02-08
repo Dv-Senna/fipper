@@ -15,7 +15,7 @@ namespace fp {
 	concept IsEndpointCallbackWithReqRes = fp::IsRequest<Request>
 		&& fp::IsResponse<Response>
 		&& std::is_nothrow_invocable_v<Func, Request, Response&>
-		&& std::same_as<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode>;
+		&& (std::same_as<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode> || std::is_void_v<std::invoke_result_t<Func, Request, Response&>>);
 
 	template <typename Func>
 	concept IsEndpointCallback = fp::IsEndpointCallbackWithReqRes<
@@ -23,6 +23,14 @@ namespace fp {
 		fp::utils::SanitizedFunctionParameter_t<Func, 0>,
 		fp::utils::SanitizedFunctionParameter_t<Func, 1>
 	>;
+
+	template <typename Func>
+	concept IsHttpReturningEndpointCallback = fp::IsEndpointCallback<Func>
+		&& std::same_as<std::invoke_result_t<
+			Func,
+			fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+			fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
+		fp::HttpCode>;
 
 
 	class EndpointBase {
