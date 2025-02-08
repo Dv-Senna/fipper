@@ -19,17 +19,6 @@
 using namespace std::literals;
 
 
-FP_REFLECTED_STRUCT(Foo,
-	((int) a)
-	((std::string) b)
-	((nlohmann::json) c)
-);
-
-FP_REFLECTED_STRUCT(Bar,
-	((std::uint64_t) value)
-	((Foo) foo)
-);
-
 FP_REFLECTED_STRUCT(Person,
 	((std::string) name)
 	((std::string) surname)
@@ -41,20 +30,6 @@ int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
 	}};
-
-	Foo foo {};
-	foo.a = 12;
-	foo.b = "Hihi";
-	foo.c["hello"] = "world";
-	Bar bar {};
-	bar.value = 42;
-	bar.foo = foo;
-	auto serialized {fp::serialize(bar)};
-	if (!serialized)
-		return EXIT_FAILURE;
-	std::string str {(const char*)serialized->data.data(), (const char*)serialized->data.data() + serialized->data.size()};
-	std::println("SER : {}", str);
-
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
