@@ -9,6 +9,7 @@
 #include <fp/utils/janitor.hpp>
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
+#include <fp/utils/macros.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -17,61 +18,17 @@
 
 using namespace std::literals;
 
-#define REMOVE_PARENTHESIS(...) __VA_ARGS__
 
-#define REFLECT_FOREACH_MEMBER_CREATION(seq) REFLECT_FOREACH_MEMBER_END(REFLECT_FOREACH_MEMBER_CREATION_A seq)
-#define REFLECT_FOREACH_MEMBER_CREATION_BODY(value) REMOVE_PARENTHESIS value;
-#define REFLECT_FOREACH_MEMBER_CREATION_A(x) REFLECT_FOREACH_MEMBER_CREATION_BODY(x) REFLECT_FOREACH_MEMBER_CREATION_B
-#define REFLECT_FOREACH_MEMBER_CREATION_B(x) REFLECT_FOREACH_MEMBER_CREATION_BODY(x) REFLECT_FOREACH_MEMBER_CREATION_A
-#define REFLECT_FOREACH_MEMBER_CREATION_A_END
-#define REFLECT_FOREACH_MEMBER_CREATION_B_END
-#define REFLECT_FOREACH_MEMBER_END(...) REFLECT_FOREACH_MEMBER_END_(__VA_ARGS__)
-#define REFLECT_FOREACH_MEMBER_END_(...) __VA_ARGS__##_END
-
-#define REFLECT(name, seq) struct name {\
-	constexpr static bool hasReflection {true};\
-	REFLECT_FOREACH_MEMBER_CREATION(seq)\
-}
-
-REFLECT(Foo,
-	((int) a)((std::string) b)((nlohmann::json) c)
+FP_REFLECTED_STRUCT(Foo,
+	((int) a)
+	((std::string) b)
+	((nlohmann::json) c)
 );
 
-/*REFLECT(Bar,
-	(std::uint64_t) value,
-	(Foo) foo
-);*/
-
-/*struct Foo {
-	constexpr static bool hasReflection {true};
-
-	int a;
-	std::string b;
-	nlohmann::json c;
-
-	using MembersTypes = std::tuple<int, std::string, nlohmann::json>;
-	constexpr static std::tuple<int Foo::*, std::string Foo::*, nlohmann::json Foo::*> members {
-		&Foo::a,
-		&Foo::b,
-		&Foo::c
-	};
-	constexpr static std::array<std::string_view, 3> names {"a", "b", "c"};
-};*/
-
-
-/*struct Bar {
-	constexpr static bool hasReflection {true};
-
-	std::uint64_t value;
-	Foo foo;
-
-	using MembersTypes = std::tuple<std::uint64_t, Foo>;
-	constexpr static std::tuple<std::uint64_t Bar::*, Foo Bar::*> members {
-		&Bar::value,
-		&Bar::foo
-	};
-	constexpr static std::array<std::string_view, 2> names {"value", "foo"};
-};
+FP_REFLECTED_STRUCT(Bar,
+	((std::uint64_t) value)
+	((Foo) foo)
+);
 
 
 template <typename T>
@@ -87,12 +44,12 @@ auto serializeLoop(const S &value) noexcept -> std::optional<nlohmann::json> {
 			return std::nullopt;
 		using T = std::tuple_element_t<index, typename S::MembersTypes>;
 		if constexpr (std::is_fundamental_v<T> || std::is_same_v<T, std::string>)
-			(*json)[S::names[index]] = value.*(std::get<index> (S::members));
+			(*json)[S::MEMBERS_NAMES[index]] = value.*(std::get<index> (S::MEMBERS_PTRS));
 		else {
-			auto serialized {jsonify(value.*(std::get<index> (S::members)))};
+			auto serialized {jsonify(value.*(std::get<index> (S::MEMBERS_PTRS)))};
 			if (!serialized)
 				return std::nullopt;
-			(*json)[S::names[index]] = *serialized;
+			(*json)[S::MEMBERS_NAMES[index]] = *serialized;
 		}
 		return json;
 	}
@@ -128,8 +85,13 @@ auto fp::serialize<Bar> (const Bar &bar) noexcept -> std::optional<fp::Serialize
 	if (!json)
 		return std::nullopt;
 	return fp::serialize(json->dump(4));
-}*/
+}
 
+
+
+
+
+static_assert(Foo::MEMBERS_COUNT == 3);
 
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
@@ -140,7 +102,7 @@ int main() {
 	foo.a = 12;
 	foo.b = "Hihi";
 	foo.c["hello"] = "world";
-/*	Bar bar {};
+	Bar bar {};
 	bar.value = 42;
 	bar.foo = foo;
 	auto serialized {fp::serialize(bar)};
@@ -148,7 +110,7 @@ int main() {
 		return EXIT_FAILURE;
 	std::string str {(const char*)serialized->data.data(), (const char*)serialized->data.data() + serialized->data.size()};
 	std::println("SER : {}", str);
-*/
+
 	return EXIT_SUCCESS;
 
 	fp::Server server {};
