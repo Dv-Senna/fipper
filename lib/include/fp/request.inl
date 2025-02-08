@@ -1,8 +1,10 @@
 #pragma once
 
+#include "fp/request.hpp"
+
 #include <optional>
 
-#include "fp/request.hpp"
+#include "fp/deserializer.hpp"
 
 
 namespace fp {
@@ -31,6 +33,16 @@ namespace fp {
 	constexpr auto Request<Body, Params...>::setParamNames(const std::array<std::string_view, sizeof...(Params)> &names) noexcept -> void {
 		for (std::size_t i {0}; i < sizeof...(Params); ++i)
 			m_namesOfParams[i].first = names[i];
+	}
+
+
+	template <typename Body, typename ...Params>
+	auto Request<Body, Params...>::deserialize(std::string_view str) noexcept -> fp::Result {
+		std::optional<Body> bodyWithError {fp::deserialize<Body> (str)};
+		if (!bodyWithError)
+			return fp::Result::eFailure;
+		m_body = std::move(*bodyWithError);
+		return fp::Result::eSuccess;
 	}
 
 

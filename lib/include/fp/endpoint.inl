@@ -40,6 +40,18 @@ namespace fp {
 			request.setParams(std::move(*params));
 		}
 
+		/*if constexpr (Request::HAS_BODY) {
+
+		}
+
+		if (request.deserialize(requestBody) != fp::Result::eSuccess) {
+			if (clientConnection.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
+				fp::ErrorStack::push("Can't send response of invalid request body of route");
+				fp::ErrorStack::logAll();
+			}
+			return;
+		}*/
+
 		Response response {};
 		fp::HttpCode code {this->m_callback(request, response)};
 		response.serialize();

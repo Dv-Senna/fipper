@@ -40,10 +40,11 @@ int main() {
 		response.header.contentType = fp::ContentType::eHtml;
 		response.body = std::format("<html>\
 			<head>\
+				<title>{0}</title>\
 				<script src='scripts/script.js'></script>\
 			</head>\
 			<body style='background-color: #111; color: #fff;'>\
-				<h1>Hello World {} !</h1>\
+				<h1>Hello World {0} !</h1>\
 			</body>\
 		</html>", name);
 		return fp::HttpCode::e200;
