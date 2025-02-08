@@ -30,68 +30,12 @@ FP_REFLECTED_STRUCT(Bar,
 	((Foo) foo)
 );
 
+FP_REFLECTED_STRUCT(Person,
+	((std::string) name)
+	((std::string) surname)
+	((int) age)
+);
 
-template <typename T>
-auto jsonify(const T &t) noexcept -> std::optional<nlohmann::json>;
-
-template <typename S, std::size_t index>
-auto serializeLoop(const S &value) noexcept -> std::optional<nlohmann::json> {
-	if constexpr (index >= std::tuple_size_v<typename S::MembersTypes>)
-		return nlohmann::json{};
-	else {
-		auto json (serializeLoop<S, index + 1> (value));
-		if (!json)
-			return std::nullopt;
-		using T = std::tuple_element_t<index, typename S::MembersTypes>;
-		if constexpr (std::is_fundamental_v<T> || std::is_same_v<T, std::string>)
-			(*json)[S::MEMBERS_NAMES[index]] = value.*(std::get<index> (S::MEMBERS_PTRS));
-		else {
-			auto serialized {jsonify(value.*(std::get<index> (S::MEMBERS_PTRS)))};
-			if (!serialized)
-				return std::nullopt;
-			(*json)[S::MEMBERS_NAMES[index]] = *serialized;
-		}
-		return json;
-	}
-}
-
-
-
-template <typename T>
-auto jsonify(const T &value) noexcept -> std::optional<nlohmann::json> {
-	auto json = serializeLoop<T, 0> (value);
-	if (!json)
-		return std::nullopt;
-	return *json;
-}
-
-template <>
-auto jsonify<nlohmann::json> (const nlohmann::json &json) noexcept -> std::optional<nlohmann::json> {
-	return json;
-}
-
-
-template <>
-auto fp::serialize<Foo> (const Foo &foo) noexcept -> std::optional<fp::Serialized> {
-	auto json = jsonify(foo);
-	if (!json)
-		return std::nullopt;
-	return fp::serialize(*json);
-}
-
-template <>
-auto fp::serialize<Bar> (const Bar &bar) noexcept -> std::optional<fp::Serialized> {
-	auto json = jsonify(bar);
-	if (!json)
-		return std::nullopt;
-	return fp::serialize(json->dump(4));
-}
-
-
-
-
-
-static_assert(Foo::MEMBERS_COUNT == 3);
 
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
@@ -111,7 +55,6 @@ int main() {
 	std::string str {(const char*)serialized->data.data(), (const char*)serialized->data.data() + serialized->data.size()};
 	std::println("SER : {}", str);
 
-	return EXIT_SUCCESS;
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
@@ -143,10 +86,10 @@ int main() {
 		return fp::HttpCode::e200;
 	});
 
-	server.get("/api/data", [](const fp::Request<void>&, fp::Response<nlohmann::json> &response) noexcept {
-		response.body["name"] = "Michel";
-		response.body["surname"] = "Michel";
-		response.body["age"] = 72;
+	server.get("/api/data", [](const fp::Request<void>&, fp::Response<Person> &response) noexcept {
+		response.body.name = "Michel";
+		response.body.surname = "Michel";
+		response.body.age = 72;
 		return fp::HttpCode::e200;
 	});
 

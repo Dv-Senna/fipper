@@ -19,8 +19,49 @@ namespace fp {
 		fp::ContentType type {fp::ContentType::eJson};
 	};
 
+	namespace __internals {
+		template <typename T>
+		auto jsonify(const T &value) noexcept -> std::optional<nlohmann::json>;
+
+		template <typename S, std::size_t INDEX>
+		auto jsonifyLoop(const S &value) noexcept -> std::optional<nlohmann::json> {
+			if constexpr (INDEX >= S::MEMBERS_COUNT)
+				return nlohmann::json{};
+			else {
+				auto json {jsonifyLoop<S, INDEX+1> (value)};
+				if (!json)
+					return std::nullopt;
+
+				using T = std::tuple_element_t<INDEX, typename S::MembersTypes>;
+				if constexpr (std::is_fundamental_v<T> || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
+					(*json)[S::MEMBERS_NAMES[INDEX]] = value.*(std::get<INDEX> (S::MEMBERS_PTRS));
+				else {
+					auto jsonified {jsonify(value.*(std::get<INDEX> (S::MEMBERS_PTRS)))};
+					if (!jsonified)
+						return std::nullopt;
+					(*json)[S::MEMBERS_NAMES[INDEX]] = *jsonified;
+				}
+				return json;
+			}
+		}
+
+		template <typename T>
+		auto jsonify(const T &value) noexcept -> std::optional<nlohmann::json> {
+			return jsonifyLoop<T, 0> (value);
+		}
+
+		template <>
+		FP_CORE auto jsonify<nlohmann::json> (const nlohmann::json &value) noexcept -> std::optional<nlohmann::json>;
+
+	} // namespace __internals
+
 	template <typename T>
-	auto serialize(const T &) noexcept -> std::optional<Serialized>;
+	auto serialize(const T &value) noexcept -> std::optional<Serialized> {
+		auto json {__internals::jsonify(value)};
+		if (!json)
+			return std::nullopt;
+		return serialize(*json);
+	}
 
 	template <>
 	FP_CORE auto serialize<std::string> (const std::string &) noexcept -> std::optional<Serialized>;
