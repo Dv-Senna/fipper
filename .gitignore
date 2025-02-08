@@ -46,3 +46,6 @@ build/*
 !scripts/*.sh
 !scripts/*.bat
 !scripts/*.ps1
+
+# generated files
+lib/include/fp/utils/generated/*

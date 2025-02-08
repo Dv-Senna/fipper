@@ -4,6 +4,8 @@
 #include <string_view>
 #include <tuple>
 
+#include "fp/utils/generated/macro_var_to_seq.hpp"
+
 
 #define FP_EMPTY
 #define FP_NULL(...)
@@ -14,6 +16,8 @@
 #define FP_STATE(x, ...) __VA_ARGS__
 #define FP_STRINGIFY(...) FP_STRINGIFY_(__VA_ARGS__)
 #define FP_STRINGIFY_(...) #__VA_ARGS__
+#define FP_CONCAT(...) FP_CONCAT_(__VA_ARGS__)
+#define FP_CONCAT_(a, b) a##b
 
 /*
  * Convert a sequence to an improved guide
@@ -88,7 +92,7 @@
 /*
  * @brief Create a structure with reflection data, so it can auto-generate json translation and serialization
  * @param name The name of the struct
- * @members The members of the struct, in a sequence form
+ * @... The members of the struct
  *
  * Example:
  *     To create the following struct :
@@ -108,7 +112,9 @@
  * 
  * @warning This only support C-like structure
  * */
-#define FP_REFLECTED_STRUCT(name, members) struct name {\
+#define FP_REFLECTED_STRUCT(name, ...) FP_REFLECTED_STRUCT_SEQ(name, FP_VAR_TO_SEQ(__VA_ARGS__))
+
+#define FP_REFLECTED_STRUCT_SEQ(name, members) struct name {\
 	FP_SEQ_FOREACH_BODY(FP_REFLECTED_STRUCT_CREATE_MEMBER,, members)\
 \
 	constexpr static bool HAS_REFLECTION {true};\

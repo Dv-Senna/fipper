@@ -10,11 +10,16 @@ set(PROJECT_ACRONYM fp)
 string(TOUPPER ${PROJECT_ACRONYM} PROJECT_ACRONYM_UPPERCASE)
 set(PROJECT_CPP_DIALECT 23)
 
+set(FIPPER_VAR_TO_SEQ_MAX_SIZE 64)
+
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 
 add_subdirectory(vendors/nlohmann_json)
 
 set(PROJECT_DEPS_LIBS nlohmann_json::nlohmann_json)
+set(PROJECT_SCRIPTS ${PROJECT_SOURCE_DIR}/scripts)
+set(PROJECT_PYTHON_SCRIPTS ${PROJECT_SCRIPTS}/python)
+set(PROJECT_GENERATOR_SCRIPTS ${PROJECT_PYTHON_SCRIPTS}/generator)
 
 add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
 add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)

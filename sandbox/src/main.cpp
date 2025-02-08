@@ -20,9 +20,9 @@ using namespace std::literals;
 
 
 FP_REFLECTED_STRUCT(Person,
-	((std::string) name)
-	((std::string) surname)
-	((int) age)
+	(std::string) name,
+	(std::string) surname,
+	(int) age
 );
 
 
