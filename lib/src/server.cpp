@@ -34,7 +34,7 @@ namespace fp {
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't listen to server socket");
 
 		std::println("Server listening");
-		std::println("\tFor local use : \033]8;;localhost:{0}\033\\localhost:{0}\033]8;;\033\\", m_port);
+		std::println("\tFor local use : \033]8;;http://localhost:{0}\033\\localhost:{0}\033]8;;\033\\", m_port);
 
 		while (!s_endSignal) {
 			auto clientSocketWithError {m_serverSocket.accept(1000ms)};
