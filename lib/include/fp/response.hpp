@@ -6,15 +6,15 @@
 
 namespace fp {
 	template <typename Response>
-	concept IsResponse = (std::same_as<typename Response::HasBody, std::true_type> || std::same_as<typename Response::HasBody, std::false_type>)
-		&& requires (Response res, typename Response::Header) {
+	concept IsResponse = requires (Response res, typename Response::Header) {
+		{Response::HAS_BODY} -> std::convertible_to<bool>;
 		{res.header} -> std::same_as<typename Response::Header&>;
 	};
 
 	template <typename Body>
 	struct Response {
 		using Header = ResponseHeader<Body>;
-		using HasBody = std::true_type;
+		static constexpr bool HAS_BODY {true};
 		ResponseHeader<Body> header;
 		Body body;
 		std::vector<std::byte> serialized;
@@ -31,7 +31,7 @@ namespace fp {
 	template <>
 	struct Response<void> {
 		using Header = ResponseHeader<void>;
-		using HasBody = std::false_type;
+		static constexpr bool HAS_BODY {false};
 		ResponseHeader<void> header;
 
 		constexpr auto serialize() noexcept -> void {}

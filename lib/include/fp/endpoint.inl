@@ -26,7 +26,7 @@ namespace fp {
 		std::string_view requestRoute {*++split.begin()};
 
 		Request request {};
-		if constexpr (std::same_as<typename Request::HasParams, std::true_type>) {
+		if constexpr (Request::HAS_PARAMS) {
 			std::optional params {m_route.extractParamsFromInstance(requestRoute)};
 			if (!params) {
 				if (clientConnection.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
@@ -45,7 +45,7 @@ namespace fp {
 		response.serialize();
 
 		std::string responseData {};
-		if constexpr (std::same_as<typename Response::HasBody, std::true_type>) {
+		if constexpr (Response::HAS_BODY) {
 			std::string data {(const char*)response.serialized.data(), (const char*)response.serialized.data() + response.serialized.size()};
 			responseData = std::format("HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
 				std::to_string(static_cast<std::int32_t> (code)),

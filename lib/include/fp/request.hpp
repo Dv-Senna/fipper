@@ -12,11 +12,11 @@
 
 namespace fp {
 	template <typename Request>
-	concept IsRequest = (std::same_as<typename Request::HasParams, std::true_type> || std::same_as<typename Request::HasParams, std::false_type>)
-		&& requires (
-			Request req,
-			const Request constReq
+	concept IsRequest = requires (
+		Request req,
+		const Request constReq
 	) {
+		{Request::HAS_PARAMS} -> std::convertible_to<bool>;
 		typename Request::Header;
 		typename Request::Route;
 		{req.markRuntimeReady()} -> std::same_as<void>;
@@ -29,7 +29,7 @@ namespace fp {
 		public:
 			using Header = RequestHeader<Body>;
 			using Route = RouteString<Params...>;
-			using HasParams = std::true_type;
+			static constexpr bool HAS_PARAMS {true};
 
 			constexpr Request() noexcept = default;
 
@@ -68,7 +68,7 @@ namespace fp {
 		public:
 			using Header = RequestHeader<void>;
 			using Route = RouteString<Params...>;
-			using HasParams = std::true_type;
+			static constexpr bool HAS_PARAMS {true};
 
 			constexpr Request() noexcept = default;
 
@@ -104,7 +104,7 @@ namespace fp {
 		public:
 			using Header = RequestHeader<Body>;
 			using Route = RouteString<>;
-			using HasParams = std::false_type;
+			static constexpr bool HAS_PARAMS {false};
 
 			constexpr Request() noexcept = default;
 
@@ -126,7 +126,7 @@ namespace fp {
 		public:
 			using Header = RequestHeader<void>;
 			using Route = RouteString<>;
-			using HasParams = std::false_type;
+			static constexpr bool HAS_PARAMS {false};
 
 			constexpr Request() noexcept = default;
 
