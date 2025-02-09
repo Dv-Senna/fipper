@@ -3,12 +3,29 @@
 #include <csignal>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <print>
 #include <thread>
 #include <unistd.h>
 
 #include "fp/errorStack.hpp"
+#include "fp/utils/benchmark.hpp"
 #include "fp/utils/janitor.hpp"
+
+
+#define FP_REQUEST_DISPATCHING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash>
+#define FP_REQUEST_HANDLING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash, std::string>
+
+#ifndef FP_BENCHMARK_ENABLED
+namespace fp::utils {
+	using namespace fp::utils::literals;
+
+	template <>
+	struct BenchmarkEnabled<"request_dispatching"_hash> : std::false_type {};
+	template <>
+	struct BenchmarkEnabled<"request_handling"_hash> : std::false_type {};
+};
+#endif // FP_BENCHMARK_ENABLED
 
 
 namespace fp {
@@ -27,7 +44,26 @@ namespace fp {
 
 
 	auto Server::run() noexcept -> fp::Result {
+		using namespace fp::utils::literals;
 		using namespace std::literals;
+
+		FP_REQUEST_DISPATCHING_BENCHMARK::setCallback([](std::chrono::microseconds duration) {
+			static std::mutex mutex {};
+			static std::ofstream csv {"benchmarks/request_dispatching.csv"};
+
+			std::lock_guard _ {mutex};
+			csv << duration.count() << std::endl;
+		});
+
+		FP_REQUEST_HANDLING_BENCHMARK::setCallback([](std::chrono::microseconds duration, const std::string &route) {
+			static std::mutex mutex {};
+			static std::ofstream csv {"benchmarks/request_handling.csv"};
+
+			std::lock_guard _ {mutex};
+			csv << std::quoted(route) << "," << duration.count() << std::endl;
+		});
+
+
 		(void)std::signal(SIGINT, Server::s_signalHandler);
 
 		if (m_serverSocket.listen(m_socketQueueSizeHint) != fp::Result::eSuccess)
@@ -45,6 +81,7 @@ namespace fp {
 			}
 
 			fp::Socket &clientSocket {*clientSocketWithError};
+			FP_REQUEST_DISPATCHING_BENCHMARK _ {};
 
 			auto hasDataToRecieveWithError {clientSocket.hasDataToRecieve(1000ms)};
 			if (!hasDataToRecieveWithError)
@@ -84,6 +121,7 @@ namespace fp {
 
 
 	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> void {
+		using namespace fp::utils::literals;
 		std::shared_ptr<std::latch> latch {this->m_getLatch()};
 
 		std::thread([this](std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string &&requestString) noexcept {
@@ -96,6 +134,7 @@ namespace fp {
 			};
 
 			fp::utils::Janitor _ {[&latch]() noexcept {latch->count_down();}};
+			FP_REQUEST_HANDLING_BENCHMARK benchmark {};
 
 			fp::Socket clientSocket {std::move(connection)};
 			std::string request {std::move(requestString)};
@@ -111,6 +150,7 @@ namespace fp {
 			}
 
 			std::string_view routeString {*++split.begin()};
+			benchmark.setArgs(std::string{routeString});
 			auto route {std::ranges::find_if(m_endpoints, [&routeString](const auto &endpoint){return endpoint.first->isInstance(routeString);})};
 			if (route == m_endpoints.end()) {
 				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {

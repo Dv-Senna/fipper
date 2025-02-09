@@ -49,3 +49,6 @@ build/*
 
 # generated files
 lib/include/fp/utils/generated/*
+
+# benchmarks results
+benchmarks/*
