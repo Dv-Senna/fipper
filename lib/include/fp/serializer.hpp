@@ -55,6 +55,7 @@ namespace fp {
 
 	} // namespace __internals
 
+
 	template <typename T>
 	auto serialize(const T &value) noexcept -> std::optional<Serialized> {
 		auto json {__internals::jsonify(value)};

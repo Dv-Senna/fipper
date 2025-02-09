@@ -10,7 +10,6 @@
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
 #include <fp/utils/macros.hpp>
-#include <fp/utils/generated/traitsAggregateReflection.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -41,6 +40,10 @@ struct RandomStruct {
 	int age;
 	Address address;
 };
+
+static_assert(fp::utils::ReflectionTraits<Address>::IS_MACRO_REFLECTED);
+static_assert(fp::utils::ReflectionTraits<Person>::IS_MACRO_REFLECTED);
+static_assert(!fp::utils::ReflectionTraits<RandomStruct>::IS_MACRO_REFLECTED);
 
 static_assert(std::is_same_v<std::tuple<std::string, std::string, std::string, int, int>, typename fp::utils::ReflectionTraits<Address>::MembersTypes>);
 static_assert(fp::utils::IsReflectable<Address>);
