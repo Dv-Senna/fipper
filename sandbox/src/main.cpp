@@ -10,6 +10,7 @@
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
 #include <fp/utils/macros.hpp>
+#include <fp/utils/generated/traitsAggregateReflection.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -34,6 +35,14 @@ FP_REFLECTED_STRUCT(Person,
 	(Address) address
 );
 
+static_assert(std::is_same_v<std::tuple<std::string, std::string, std::string, int, int>, typename fp::utils::ReflectionTraits<Address>::MembersTypes>);
+static_assert(fp::utils::IsReflectable<Address>);
+static_assert(fp::utils::IsReflectable<Person>);
+
+static_assert(fp::utils::AggregateMembersCount<Person>::value == 4);
+static_assert(fp::utils::AggregateMembersCount<Address>::value == 5);
+static_assert(std::is_same_v<fp::utils::AggregateMembers<Person>::Type, Person::MembersTypes>);
+static_assert(std::is_same_v<fp::utils::AggregateMembers<Address>::Type, Address::MembersTypes>);
 
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
