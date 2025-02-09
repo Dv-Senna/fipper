@@ -40,17 +40,18 @@ namespace fp {
 			request.setParams(std::move(*params));
 		}
 
-		/*if constexpr (Request::HAS_BODY) {
+		if constexpr (Request::HAS_BODY) {
+			std::string_view requestBody {requestString.begin() + requestString.find("\r\n\r\n") + 4, requestString.end()};
 
+			if (request.deserialize(requestBody) != fp::Result::eSuccess) {
+				if (clientConnection.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
+					fp::ErrorStack::push("Can't send response of invalid request body of route");
+					fp::ErrorStack::logAll();
+				}
+				return;
+			}
 		}
 
-		if (request.deserialize(requestBody) != fp::Result::eSuccess) {
-			if (clientConnection.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
-				fp::ErrorStack::push("Can't send response of invalid request body of route");
-				fp::ErrorStack::logAll();
-			}
-			return;
-		}*/
 
 		Response response {};
 		fp::HttpCode code {fp::HttpCode::e200};

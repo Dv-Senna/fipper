@@ -15,16 +15,14 @@ namespace fp {
 	template <typename Request>
 	concept IsRequest = requires (
 		Request req,
-		const Request constReq,
 		std::string_view strView
 	) {
 		{Request::HAS_PARAMS} -> std::convertible_to<bool>;
 		typename Request::Header;
 		typename Request::Route;
 		{req.markRuntimeReady()} -> std::same_as<void>;
-		{req.getHeader()} -> std::same_as<typename Request::Header&>;
+		{req.header} -> std::convertible_to<typename Request::Header>;
 		{req.deserialize(strView)} -> std::same_as<fp::Result>;
-		{constReq.getHeader()} -> std::same_as<const typename Request::Header&>;
 	};
 
 	template <typename Body, typename ...Params>
@@ -41,11 +39,6 @@ namespace fp {
 			constexpr auto setParamNames(const std::array<std::string_view, sizeof...(Params)> &names) noexcept -> void;
 			auto deserialize(std::string_view str) noexcept -> fp::Result;
 
-			constexpr auto getHeader() noexcept -> RequestHeader<Body>& {return m_header;}
-			constexpr auto getHeader() const noexcept -> const RequestHeader<Body>& {return m_header;}
-			constexpr auto getBody() noexcept -> std::enable_if_t<!std::is_void_v<Body>, Body&> {return m_body;}
-			constexpr auto getBody() const noexcept -> std::enable_if_t<!std::is_void_v<Body>, const Body&> {return m_body;}
-
 			constexpr auto setParams(std::tuple<Params...> &&params) noexcept -> void {m_params = std::move(params);}
 
 			template <std::size_t index>
@@ -59,12 +52,12 @@ namespace fp {
 			requires (std::same_as<T, Params> || ...)
 			auto getParam(std::string_view name) const noexcept -> std::optional<const T*>;
 
+			Header header;
+			Body body;
 
 		private:
 			std::pair<std::string_view, const void*> m_namesOfParams[sizeof...(Params)];
-			RequestHeader<Body> m_header;
 			std::tuple<Params...> m_params;
-			Body m_body;
 	};
 
 
@@ -82,9 +75,6 @@ namespace fp {
 			constexpr auto setParamNames(const std::array<std::string_view, sizeof...(Params)> &names) noexcept -> void;
 			inline auto deserialize(std::string_view) noexcept -> fp::Result {return fp::Result::eSuccess;}
 
-			constexpr auto getHeader() noexcept -> RequestHeader<void>& {return m_header;}
-			constexpr auto getHeader() const noexcept -> const RequestHeader<void>& {return m_header;}
-
 			constexpr auto setParams(std::tuple<Params...> &&params) noexcept -> void {m_params = std::move(params);}
 
 			template <std::size_t index>
@@ -98,10 +88,11 @@ namespace fp {
 			requires (std::same_as<T, Params> || ...)
 			auto getParam(std::string_view name) const noexcept -> std::optional<const T*>;
 
+			Header header;
+
 
 		private:
 			std::pair<std::string_view, const void*> m_namesOfParams[sizeof...(Params)];
-			RequestHeader<void> m_header;
 			std::tuple<Params...> m_params;
 	};
 
@@ -119,14 +110,8 @@ namespace fp {
 			inline auto markRuntimeReady() noexcept -> void {}
 			auto deserialize(std::string_view str) noexcept -> fp::Result;
 
-			constexpr auto getHeader() noexcept -> RequestHeader<Body>& {return m_header;}
-			constexpr auto getHeader() const noexcept -> const RequestHeader<Body>& {return m_header;}
-			constexpr auto getBody() noexcept -> std::enable_if_t<!std::is_void_v<Body>, Body&> {return m_body;}
-			constexpr auto getBody() const noexcept -> std::enable_if_t<!std::is_void_v<Body>, const Body&> {return m_body;}
-
-		private:
-			RequestHeader<Body> m_header;
-			Body m_body;
+			Header header;
+			Body body;
 	};
 
 
@@ -143,11 +128,7 @@ namespace fp {
 			inline auto markRuntimeReady() noexcept -> void {}
 			inline auto deserialize(std::string_view) noexcept -> fp::Result {return fp::Result::eSuccess;}
 
-			constexpr auto getHeader() noexcept -> RequestHeader<void>& {return m_header;}
-			constexpr auto getHeader() const noexcept -> const RequestHeader<void>& {return m_header;}
-
-		private:
-			RequestHeader<void> m_header;
+			Header header;
 	};
 
 } // namespace fp

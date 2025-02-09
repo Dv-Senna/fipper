@@ -35,6 +35,12 @@ struct Person {
 };
 
 
+struct Country {
+	std::string name;
+	std::string id;
+};
+
+
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
@@ -66,10 +72,18 @@ int main() {
 
 	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eJavascript;
-		response.body = "console.log('Hello World !'); fetch('/api/data').then((res)=>res.json()).then((body)=>console.log(body))";
+		response.body = "fetch('/api/data', {\
+			method: 'POST',\
+			body: JSON.stringify({\
+				name: 'Switzerland',\
+				id: 'CH'\
+			})\
+		}).then((res)=>res.json()).then((body)=>console.log(body))";
 	});
 
-	server.get("/api/data", [](const fp::Request<void>&, fp::Response<Person> &response) noexcept {
+	server.post("/api/data", [](const fp::Request<Country> &request, fp::Response<Person> &response) noexcept {
+		std::println("COUNTRY : {} ({})", request.body.name, request.body.id);
+
 		response.body.name = "Albert";
 		response.body.surname = "Einstein";
 		response.body.age = 76;

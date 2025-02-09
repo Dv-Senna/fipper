@@ -41,7 +41,16 @@ namespace fp {
 		std::optional<Body> bodyWithError {fp::deserialize<Body> (str)};
 		if (!bodyWithError)
 			return fp::Result::eFailure;
-		m_body = std::move(*bodyWithError);
+		body = std::move(*bodyWithError);
+		return fp::Result::eSuccess;
+	}
+
+	template <typename Body>
+	auto Request<Body>::deserialize(std::string_view str) noexcept -> fp::Result {
+		std::optional<Body> bodyWithError {fp::deserialize<Body> (str)};
+		if (!bodyWithError)
+			return fp::Result::eFailure;
+		body = std::move(*bodyWithError);
 		return fp::Result::eSuccess;
 	}
 
