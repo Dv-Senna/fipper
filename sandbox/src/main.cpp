@@ -19,58 +19,26 @@
 using namespace std::literals;
 
 
-FP_REFLECTED_STRUCT(Address,
-	(std::string) country,
-	(std::string) city,
-	(std::string) street,
-	(int) postalCode,
-	(int) number
-);
+struct Address {
+	std::string country;
+	std::string city;
+	std::string street;
+	int postalCode;
+	int number;
+};
 
-FP_REFLECTED_STRUCT(Person,
-	(std::string) name,
-	(std::string) surname,
-	(int) age,
-	(Address) address
-);
-
-struct RandomStruct {
+struct Person {
 	std::string name;
 	std::string surname;
 	int age;
 	Address address;
 };
 
-static_assert(fp::utils::ReflectionTraits<Address>::IS_MACRO_REFLECTED);
-static_assert(fp::utils::ReflectionTraits<Person>::IS_MACRO_REFLECTED);
-static_assert(!fp::utils::ReflectionTraits<RandomStruct>::IS_MACRO_REFLECTED);
-
-static_assert(std::is_same_v<std::tuple<std::string, std::string, std::string, int, int>, typename fp::utils::ReflectionTraits<Address>::MembersTypes>);
-static_assert(fp::utils::IsReflectable<Address>);
-static_assert(fp::utils::IsReflectable<Person>);
-
-static_assert(fp::utils::AggregateMembersCount<Person>::value == 4);
-static_assert(fp::utils::AggregateMembersCount<Address>::value == 5);
-static_assert(std::is_same_v<fp::utils::AggregateMembers<Person>::Type, Person::MembersTypes>);
-static_assert(std::is_same_v<fp::utils::AggregateMembers<Address>::Type, Address::MembersTypes>);
-
-static_assert(fp::utils::IsReflectable<RandomStruct>);
-static_assert(fp::utils::ReflectionTraits<RandomStruct>::MEMBERS_COUNT == 4);
-static_assert(std::is_same_v<fp::utils::ReflectionTraits<RandomStruct>::MembersTypes, fp::utils::ReflectionTraits<Person>::MembersTypes>);
 
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
 	}};
-
-
-	RandomStruct randomStruct {};
-	fp::utils::ReflectionTraits<RandomStruct>::getMember<0> (randomStruct) = "Hello";
-	fp::utils::ReflectionTraits<RandomStruct>::getMember<1> (randomStruct) = "World";
-	fp::utils::ReflectionTraits<RandomStruct>::getMember<2> (randomStruct) = 12;
-	std::println("name : {}", randomStruct.name);
-	std::println("surname : {}", randomStruct.surname);
-	std::println("age : {}", randomStruct.age);
 
 
 	fp::Server server {};

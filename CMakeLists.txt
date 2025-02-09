@@ -15,9 +15,9 @@ set(FIPPER_VAR_TO_SEQ_MAX_SIZE ${FIPPER_REFLECTION_STRUCTURE_MAX_MEMBERS_COUNT})
 
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 
-add_subdirectory(vendors/nlohmann_json)
+add_subdirectory(vendors/glaze)
 
-set(PROJECT_DEPS_LIBS nlohmann_json::nlohmann_json)
+set(PROJECT_DEPS_LIBS glaze::glaze)
 set(PROJECT_SCRIPTS ${PROJECT_SOURCE_DIR}/scripts)
 set(PROJECT_PYTHON_SCRIPTS ${PROJECT_SCRIPTS}/python)
 set(PROJECT_GENERATOR_SCRIPTS ${PROJECT_PYTHON_SCRIPTS}/generator)

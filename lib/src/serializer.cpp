@@ -2,14 +2,6 @@
 
 
 namespace fp {
-	namespace __internals {
-		template <>
-		FP_CORE auto jsonify<nlohmann::json> (const nlohmann::json &value) noexcept -> std::optional<nlohmann::json> {
-			return value;
-		}
-
-	} // namespace __internals
-
 	template <>
 	auto serialize<std::string> (const std::string &data) noexcept -> std::optional<Serialized> {
 		return Serialized{
@@ -72,15 +64,6 @@ namespace fp {
 	template <>
 	auto serialize<long double> (const long double &data) noexcept -> std::optional<Serialized> {
 		return serialize(std::to_string(data));
-	}
-
-
-	template <>
-	FP_CORE auto serialize<nlohmann::json> (const nlohmann::json &data) noexcept -> std::optional<Serialized>{
-		auto serialized {serialize(std::string{data.dump()})};
-		if (!!serialized)
-			serialized->type = fp::ContentType::eJson;
-		return serialized;
 	}
 
 } // namespace fp
