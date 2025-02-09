@@ -1,6 +1,5 @@
 #pragma once
 
-#include <any>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -11,6 +10,7 @@
 
 #include "fp/core.hpp"
 #include "fp/header.hpp"
+#include "fp/utils/traits.hpp"
 
 
 namespace fp {
@@ -25,7 +25,7 @@ namespace fp {
 
 		template <typename S, std::size_t INDEX>
 		auto jsonifyLoop(const S &value) noexcept -> std::optional<nlohmann::json> {
-			if constexpr (INDEX >= S::MEMBERS_COUNT)
+			if constexpr (INDEX >= fp::utils::ReflectionTraits<S>::MEMBERS_COUNT)
 				return nlohmann::json{};
 			else {
 				auto json {jsonifyLoop<S, INDEX+1> (value)};
@@ -34,12 +34,12 @@ namespace fp {
 
 				using T = std::tuple_element_t<INDEX, typename S::MembersTypes>;
 				if constexpr (std::is_fundamental_v<T> || std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>)
-					(*json)[S::MEMBERS_NAMES[INDEX]] = value.*(std::get<INDEX> (S::MEMBERS_PTRS));
+					(*json)[fp::utils::ReflectionTraits<S>::MEMBERS_NAMES[INDEX]] = fp::utils::ReflectionTraits<S>::template getMember<INDEX> (value);
 				else {
-					auto jsonified {jsonify(value.*(std::get<INDEX> (S::MEMBERS_PTRS)))};
+					auto jsonified {jsonify(fp::utils::ReflectionTraits<S>::template getMember<INDEX> (value))};
 					if (!jsonified)
 						return std::nullopt;
-					(*json)[S::MEMBERS_NAMES[INDEX]] = *jsonified;
+					(*json)[fp::utils::ReflectionTraits<S>::MEMBERS_NAMES[INDEX]] = *jsonified;
 				}
 				return json;
 			}

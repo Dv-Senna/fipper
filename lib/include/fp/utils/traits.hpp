@@ -4,6 +4,8 @@
 #include <string_view>
 #include <tuple>
 
+#include "fp/utils/generated/traitsAggregateReflection.hpp"
+
 
 namespace fp::utils {
 	namespace __internals {
@@ -53,21 +55,33 @@ namespace fp::utils {
 	concept IsReflectable = std::is_aggregate_v<T> || IsMacroReflected<T>;
 
 
+	namespace __internals {
+		template <IsReflectable T, std::size_t INDEX = 0>
+		consteval auto aggregateGetMembersPtrs() {
+
+		};
+
+	} // namespace __internals
+
+
 	template <IsReflectable T>
 	struct ReflectionTraits {
 		static constexpr bool IS_MACRO_REFLECTED {false};
-		static constexpr std::size_t MEMBERS_COUNT {0};
-		static constexpr std::array<std::ptrdiff_t, MEMBERS_COUNT> MEMBERS_PTRS {std::make_index_sequence<MEMBERS_COUNT> (-1)};
+		static constexpr std::size_t MEMBERS_COUNT {fp::utils::AggregateMembersCount<T>::value};
 		static constexpr std::array<std::string_view, MEMBERS_COUNT> MEMBERS_NAMES {};
-//		using MembersTypes = ;
+		using MembersTypes = typename fp::utils::AggregateMembers<T>::Type;
 
 		template <std::size_t INDEX>
 		requires (INDEX < MEMBERS_COUNT)
-		static constexpr auto getMember(T &instance) noexcept;
+		static constexpr auto getMember(T &instance) noexcept -> std::tuple_element_t<INDEX, MembersTypes>& {
+			return std::get<INDEX> (fp::utils::__internals::aggregateMakeTie(instance));
+		}
 
 		template <std::size_t INDEX>
 		requires (INDEX < MEMBERS_COUNT)
-		static constexpr auto getMember(const T &instance) noexcept;
+		static constexpr auto getMember(const T &instance) noexcept -> const std::tuple_element_t<INDEX, MembersTypes>& {
+			return std::get<INDEX> (fp::utils::__internals::aggregateMakeTie(instance));
+		}
 	};
 
 
@@ -75,7 +89,6 @@ namespace fp::utils {
 	struct ReflectionTraits<T> {
 		static constexpr bool IS_MACRO_REFLECTED {true};
 		static constexpr std::size_t MEMBERS_COUNT {T::MEMBERS_COUNT};
-		static constexpr auto MEMBERS_PTRS {T::MEMBERS_PTRS};
 		static constexpr auto MEMBERS_NAMES {T::MEMBERS_NAMES};
 		using MembersTypes = T::MembersTypes;
 
@@ -90,6 +103,9 @@ namespace fp::utils {
 		static constexpr auto getMember(const T &instance) noexcept -> const std::tuple_element_t<INDEX, MembersTypes>& {
 			return instance.*(std::get<INDEX> (MEMBERS_PTRS));
 		}
+		
+		private:
+			static constexpr auto MEMBERS_PTRS {T::MEMBERS_PTRS};
 	};
 
 } // namespace fp::utils
