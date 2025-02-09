@@ -19,10 +19,19 @@
 using namespace std::literals;
 
 
+FP_REFLECTED_STRUCT(Address,
+	(std::string) country,
+	(std::string) city,
+	(std::string) street,
+	(int) postalCode,
+	(int) number
+);
+
 FP_REFLECTED_STRUCT(Person,
 	(std::string) name,
 	(std::string) surname,
-	(int) age
+	(int) age,
+	(Address) address
 );
 
 
@@ -60,9 +69,14 @@ int main() {
 	});
 
 	server.get("/api/data", [](const fp::Request<void>&, fp::Response<Person> &response) noexcept {
-		response.body.name = "Michel";
-		response.body.surname = "Michel";
-		response.body.age = 72;
+		response.body.name = "Albert";
+		response.body.surname = "Einstein";
+		response.body.age = 76;
+		response.body.address.country = "Switzerland";
+		response.body.address.city = "Bern";
+		response.body.address.postalCode = 3000;
+		response.body.address.street = "Kramgasse";
+		response.body.address.number = 49;
 	});
 
 
