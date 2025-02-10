@@ -10,6 +10,7 @@
 #include <fp/request.hpp>
 #include <fp/utils/traits.hpp>
 #include <fp/utils/macros.hpp>
+#include <fp/containers/stackBasedRollingQueue.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -46,6 +47,32 @@ int main() {
 		fp::ErrorStack::logAll();
 	}};
 
+	struct IntWrapper {
+		int value;
+		operator int() noexcept {return value;}
+		~IntWrapper() {std::println("END OF {}", value);}
+	};
+
+	fp::containers::StackBasedRollingQueue<IntWrapper, 16> queue {};
+
+	for (std::size_t i {0}; i < 20; ++i) {
+		if (queue.push(IntWrapper{(int)i}) != fp::Result::eSuccess)
+			std::println("Can't push {} in the rolling queue", i);
+	}
+
+	for (std::size_t i {0}; i < 9; ++i) {
+		std::optional element {queue.pop()};
+		if (!element)
+			std::println("No more element to pop : {}", i);
+		else
+			std::println("Element {} : {}", i, (int)*element);
+	}
+
+	for (std::size_t i {20}; i < 30; ++i) {
+		(void)queue.push(IntWrapper{(int)i});
+	}
+
+	return EXIT_SUCCESS;
 
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
