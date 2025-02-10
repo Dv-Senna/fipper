@@ -5,6 +5,43 @@
 
 namespace fp::containers {
 	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueueIterator<T, N>::operator==(const StackBasedRollingQueueIterator<T, N> &iterator) const noexcept -> bool {
+		return m_queue == iterator.m_queue && m_isEnd == iterator.m_isEnd;
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueueIterator<T, N>::operator++() noexcept -> StackBasedRollingQueueIterator<T, N>& {
+		std::optional result {m_queue->pop()};
+		m_isEnd = !result;
+		return *this;
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueueIterator<T, N>::operator*() const noexcept -> reference {
+		return *m_queue->getTopRef();
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueueIterator<T, N>::operator->() const noexcept -> pointer {
+		return m_queue->getTopRef();
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr StackBasedRollingQueueIterator<T, N>::StackBasedRollingQueueIterator(StackBasedRollingQueue<T, N> *queue, bool isEnd) noexcept :
+		m_queue {queue},
+		m_isEnd {isEnd}
+	{
+
+	}
+
+
+
+
+	template <typename T, std::size_t N>
 	constexpr StackBasedRollingQueue<T, N>::StackBasedRollingQueue() noexcept :
 		m_start {reinterpret_cast<T*> (&m_datas)},
 		m_size {0},
@@ -108,6 +145,31 @@ namespace fp::containers {
 		if (++m_start >= reinterpret_cast<T*> (&m_datas) + N)
 			m_start -= N;
 		return object;
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueue<T, N>::begin() noexcept -> iterator {
+		return iterator(this, false);
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueue<T, N>::end() noexcept -> iterator {
+		return iterator(this, true);
+
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueue<T, N>::begin() const noexcept -> const_iterator {
+		return const_iterator(this, false);
+	}
+
+
+	template <typename T, std::size_t N>
+	constexpr auto StackBasedRollingQueue<T, N>::end() const noexcept -> const_iterator {
+		return const_iterator(this, true);
 	}
 
 
