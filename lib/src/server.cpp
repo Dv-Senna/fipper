@@ -110,8 +110,7 @@ namespace fp {
 	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> fp::Result {
 		using namespace fp::utils::literals;
 
-		auto pushTime {std::chrono::high_resolution_clock::now()};
-		fp::Job job {[this, clientSocket = std::move(connection), request = std::move(request), pushTime]() mutable noexcept -> fp::Result {
+		fp::Job job {[this, clientSocket = std::move(connection), request = std::move(request)]() mutable noexcept -> fp::Result {
 			static const std::map<std::string_view, fp::HttpMethod> methodMap {
 				{"GET", fp::HttpMethod::eGet},
 				{"PUT", fp::HttpMethod::ePut},
@@ -120,7 +119,6 @@ namespace fp {
 				{"DELETE", fp::HttpMethod::eDelete}
 			};
 
-			std::println("Push -> run duration : {}", std::chrono::duration_cast<std::chrono::microseconds> (std::chrono::high_resolution_clock::now() - pushTime));
 			FP_REQUEST_HANDLING_BENCHMARK benchmark {};
 
 			//fp::Socket clientSocket {std::move(connection)};

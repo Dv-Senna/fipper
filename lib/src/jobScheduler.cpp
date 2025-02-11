@@ -57,6 +57,7 @@ namespace fp {
 
 	JobPushingLockGuard::~JobPushingLockGuard() {
 		JobQueue::s_mutex.unlock();
+		JobQueue::s_conditionVariable.notify_one();
 	}
 
 
