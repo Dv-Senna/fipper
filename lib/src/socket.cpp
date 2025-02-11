@@ -108,7 +108,7 @@ namespace fp {
 			dataToRecieve = this->hasDataToRecieve();
 			if (!dataToRecieve)
 				return fp::ErrorStack::push(std::unexpected(fp::Result::eFailure), "Can't check if more data is available in socket for recieving");
-		} while (*dataToRecieve);
+		} while (*dataToRecieve && written != 0);
 
 		return data;
 	}

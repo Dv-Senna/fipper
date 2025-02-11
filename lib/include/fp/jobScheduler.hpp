@@ -50,6 +50,7 @@ namespace fp {
 
 	class FP_CORE JobQueue {
 		using QueueType = std::array<fp::containers::StackBasedRollingQueue<Job, FP_JOB_QUEUE_SIZE>, fp::utils::EnumValueCount_v<JobPriority>>;
+
 		friend class JobAcquisitionLockGuard;
 		friend class JobPushingLockGuard;
 

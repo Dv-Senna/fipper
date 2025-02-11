@@ -20,6 +20,8 @@ namespace fp {
 
 	class FP_CORE Socket {
 		public:
+			using NativeHandle = int;
+
 			struct CreateInfos {
 				std::uint16_t port;
 			};
@@ -48,11 +50,12 @@ namespace fp {
 
 			[[nodiscard]] auto send(const std::vector<std::byte> &data) noexcept -> fp::Result;
 
-			inline auto getSocket() const noexcept -> int {return m_socket;}
+			inline auto getNativeHandle() const noexcept -> NativeHandle {return m_socket;}
 
 
-		private:
+		protected:
 			int m_socket;
 	};
 
 } // namespace fp
+
