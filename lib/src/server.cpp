@@ -121,9 +121,6 @@ namespace fp {
 
 			FP_REQUEST_HANDLING_BENCHMARK benchmark {};
 
-			//fp::Socket clientSocket {std::move(connection)};
-			//std::string request {std::move(requestString)};
-
 			auto split {std::views::split(request, ' ')};
 			std::string_view methodString {*split.begin()};
 			auto method {methodMap.find(methodString)};

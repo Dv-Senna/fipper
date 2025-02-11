@@ -12,6 +12,7 @@
 #include <fp/utils/macros.hpp>
 #include <fp/containers/stackBasedRollingQueue.hpp>
 #include <fp/jobScheduler.hpp>
+#include <fp/coroutines/promise.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
