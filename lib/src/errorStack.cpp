@@ -8,23 +8,23 @@ namespace fp {
 		m_isEnd {isEnd}
 	{
 		if (!m_isEnd)
-			m_view = ErrorStack::s_stack.top();
+			m_view = ErrorStack::s_stacks[std::this_thread::get_id()].top();
 	}
 
 
 	auto ErrorStackRange::begin() const noexcept -> iterator {
-		if (ErrorStack::s_stack.empty())
+		if (ErrorStack::s_stacks[std::this_thread::get_id()].empty())
 			return this->end();
 		return ErrorStackIterator(false);
 	}
 
 
 	auto ErrorStackIterator::operator++() noexcept -> ErrorStackIterator& {
-		ErrorStack::s_stack.pop();
-		if (ErrorStack::s_stack.empty())
+		ErrorStack::s_stacks[std::this_thread::get_id()].pop();
+		if (ErrorStack::s_stacks[std::this_thread::get_id()].empty())
 			m_isEnd = true;
 		else
-			m_view = ErrorStack::s_stack.top();
+			m_view = ErrorStack::s_stacks[std::this_thread::get_id()].top();
 		return *this;
 	}
 
@@ -36,18 +36,28 @@ namespace fp {
 			location.line(),
 			str
 		)};
-		s_stack.push(formattedStr);
+
+		auto stack {s_stacks.find(std::this_thread::get_id())};
+		if (stack == s_stacks.end()) {
+			s_stacks[std::this_thread::get_id()] = std::stack<std::string> ();
+			s_stacks[std::this_thread::get_id()].push(formattedStr);
+		}
+		else
+			stack->second.push(formattedStr);
 	}
 
 
 	auto ErrorStack::logAll() noexcept -> void {
-		if (s_stack.empty())
+		auto stack {s_stacks.find(std::this_thread::get_id())};
+		if (stack == s_stacks.end())
 			return;
-		std::println(stderr, "Some error occured :");
+		if (stack->second.empty())
+			return;
+		std::println(stderr, "Some error occured in thread {} :", std::this_thread::get_id());
 		for (const auto &error : ErrorStack::iterate())
 			std::println(stderr, "\t{}", error);
 	}
 
 
-	std::stack<std::string> ErrorStack::s_stack {};
+	std::unordered_map<std::thread::id, std::stack<std::string>> ErrorStack::s_stacks {};
 } // namespace fp

@@ -11,6 +11,7 @@
 #include <fp/utils/traits.hpp>
 #include <fp/utils/macros.hpp>
 #include <fp/containers/stackBasedRollingQueue.hpp>
+#include <fp/jobScheduler.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -47,28 +48,6 @@ int main() {
 		fp::ErrorStack::logAll();
 	}};
 
-
-	fp::containers::StackBasedRollingQueue<int, 16> queue {};
-
-	for (std::size_t i {0}; i < 20; ++i) {
-		if (queue.push(i) != fp::Result::eSuccess)
-			std::println("Can't push {} in the rolling queue", i);
-	}
-
-	for (std::size_t i {0}; i < 9; ++i) {
-		std::optional element {queue.pop()};
-		if (!element)
-			std::println("No more element to pop : {}", i);
-		else
-			std::println("Element {} : {}", i, (int)*element);
-	}
-
-	for (std::size_t i {20}; i < 30; ++i) {
-		(void)queue.push(i);
-	}
-
-	return EXIT_SUCCESS;
-
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
 		return fp::ErrorStack::push(EXIT_FAILURE, "Can't create server");
@@ -76,7 +55,7 @@ int main() {
 	server.get("/{name:not_empty}", [](const fp::Request<void, std::string> &request, fp::Response<std::string> &response) noexcept {
 		auto name {**request.getParam<std::string> ("name")};
 		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format("<html>\
+		response.body = std::format("<!DOCTYPE html><html>\
 			<head>\
 				<title>{0}</title>\
 				<script src='scripts/script.js'></script>\
@@ -89,7 +68,7 @@ int main() {
 
 	server.get("/", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {
 		response.header.contentType = fp::ContentType::eHtml;
-		response.body = std::format("<html><body style='background-color: #111; color: #fff;'><h1>This is the root get</h1></body></html>");
+		response.body = std::format("<!DOCTYPE html><html><body style='background-color: #111; color: #fff;'><h1>This is the root get</h1></body></html>");
 	});
 
 	server.get("/scripts/script.js", [](const fp::Request<void>&, fp::Response<std::string> &response) noexcept {

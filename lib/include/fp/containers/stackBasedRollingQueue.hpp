@@ -56,21 +56,22 @@ namespace fp::containers {
 			constexpr StackBasedRollingQueue() noexcept;
 			constexpr ~StackBasedRollingQueue();
 
-			template <typename Enable = std::enable_if_t<std::is_copy_constructible_v<T>, void>>
-			constexpr StackBasedRollingQueue(const StackBasedRollingQueue<T, N> &queue) noexcept;
-			template <typename Enable = std::enable_if_t<std::is_copy_constructible_v<T>, void>>
-			constexpr auto operator=(const StackBasedRollingQueue<T, N> &queue) noexcept -> StackBasedRollingQueue<T, N>&;
+			constexpr StackBasedRollingQueue(const StackBasedRollingQueue<T, N> &queue) noexcept
+				requires std::is_copy_constructible_v<T>;
+			constexpr auto operator=(const StackBasedRollingQueue<T, N> &queue) noexcept -> StackBasedRollingQueue<T, N>&
+				requires std::is_copy_constructible_v<T>;
 
-			template <typename Enable = std::enable_if_t<std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>, void>>
-			constexpr StackBasedRollingQueue(StackBasedRollingQueue<T, N> &&queue) noexcept;
-			template <typename Enable = std::enable_if_t<std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>, void>>
-			constexpr auto operator=(StackBasedRollingQueue<T, N> &&queue) noexcept -> StackBasedRollingQueue<T, N>&;
+			constexpr StackBasedRollingQueue(StackBasedRollingQueue<T, N> &&queue) noexcept
+				requires (std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>);
+			constexpr auto operator=(StackBasedRollingQueue<T, N> &&queue) noexcept -> StackBasedRollingQueue<T, N>&
+				requires (std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>);
 
 			[[nodiscard]] constexpr auto push(T &&value) noexcept -> fp::Result;
 			[[nodiscard]] constexpr auto pop() noexcept -> std::optional<T>;
 
 			constexpr auto size() const noexcept -> std::size_t {return m_size;}
 			constexpr auto maxSize() const noexcept -> std::size_t {return N;}
+			constexpr auto empty() const noexcept -> bool {return m_size == 0;}
 
 			constexpr auto begin() noexcept -> iterator;
 			constexpr auto end() noexcept -> iterator;

@@ -62,8 +62,8 @@ namespace fp::containers {
 
 
 	template <typename T, std::size_t N>
-	template <typename Enable>
-	constexpr StackBasedRollingQueue<T, N>::StackBasedRollingQueue(const StackBasedRollingQueue<T, N> &queue) noexcept :
+	constexpr StackBasedRollingQueue<T, N>::StackBasedRollingQueue(const StackBasedRollingQueue<T, N> &queue) noexcept
+		requires std::is_copy_constructible_v<T> :
 		m_start {reinterpret_cast<T*> (&m_datas)},
 		m_size {queue.m_size},
 		m_datas {}
@@ -82,8 +82,9 @@ namespace fp::containers {
 
 
 	template <typename T, std::size_t N>
-	template <typename Enable>
-	constexpr auto StackBasedRollingQueue<T, N>::operator=(const StackBasedRollingQueue<T, N> &queue) noexcept -> StackBasedRollingQueue<T, N>& {
+	constexpr auto StackBasedRollingQueue<T, N>::operator=(const StackBasedRollingQueue<T, N> &queue) noexcept -> StackBasedRollingQueue<T, N>&
+		requires std::is_copy_constructible_v<T>
+	{
 		this->~StackBasedRollingQueue<T, N> ();
 		new (this) StackBasedRollingQueue<T, N> (queue);
 		return *this;
@@ -91,8 +92,8 @@ namespace fp::containers {
 
 
 	template <typename T, std::size_t N>
-	template <typename Enable>
-	constexpr StackBasedRollingQueue<T, N>::StackBasedRollingQueue(StackBasedRollingQueue<T, N> &&queue) noexcept :
+	constexpr StackBasedRollingQueue<T, N>::StackBasedRollingQueue(StackBasedRollingQueue<T, N> &&queue) noexcept
+		requires (std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>) :
 		m_start {reinterpret_cast<T*> (&m_datas)},
 		m_size {queue.m_size},
 		m_datas {}
@@ -114,8 +115,9 @@ namespace fp::containers {
 
 
 	template <typename T, std::size_t N>
-	template <typename Enable>
-	constexpr auto StackBasedRollingQueue<T, N>::operator=(StackBasedRollingQueue<T, N> &&queue) noexcept -> StackBasedRollingQueue<T, N>& {
+	constexpr auto StackBasedRollingQueue<T, N>::operator=(StackBasedRollingQueue<T, N> &&queue) noexcept -> StackBasedRollingQueue<T, N>&
+		requires (std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>)
+	{
 		this->~StackBasedRollingQueue<T, N> ();
 		new (this) StackBasedRollingQueue<T, N> (std::move(queue));
 		return *this;

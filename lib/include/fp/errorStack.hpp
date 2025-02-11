@@ -5,6 +5,8 @@
 #include <stack>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <unordered_map>
 
 #include "fp/core.hpp"
 #include "fp/result.hpp"
@@ -100,7 +102,7 @@ namespace fp {
 
 
 		protected:
-			static std::stack<std::string> s_stack;
+			static std::unordered_map<std::thread::id, std::stack<std::string>> s_stacks;
 	};
 
 } // namespace fp

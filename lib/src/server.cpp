@@ -1,16 +1,15 @@
 #include "fp/server.hpp"
 
 #include <csignal>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <print>
-#include <thread>
 #include <unistd.h>
 
 #include "fp/errorStack.hpp"
 #include "fp/utils/benchmark.hpp"
-#include "fp/utils/janitor.hpp"
 
 
 #define FP_REQUEST_DISPATCHING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash>
@@ -33,12 +32,16 @@ namespace fp {
 		m_port = createInfos.port;
 		m_socketQueueSizeHint = createInfos.socketQueueSizeHint;
 
+		fp::JobScheduler::CreateInfos jobSchedulerCreateInfos {};
+		jobSchedulerCreateInfos.minThreadCount = createInfos.minWorkThreadCount;
+		if (m_jobScheduler.create(jobSchedulerCreateInfos) != fp::Result::eSuccess)
+			return fp::ErrorStack::push(fp::Result::eFailure, "Can't create job scheduler");
+
 		fp::Socket::CreateInfos socketCreateInfos {};
 		socketCreateInfos.port = m_port;
 		if (m_serverSocket.create(socketCreateInfos) != fp::Result::eSuccess)
 			return fp::ErrorStack::push(fp::Result::eFailure, "Can't create server socket");
 
-		m_latchs.reserve(createInfos.latchsReservedCount);
 		return fp::Result::eSuccess;
 	}
 
@@ -93,38 +96,22 @@ namespace fp {
 			if (!requestWithError)
 				return fp::ErrorStack::push(fp::Result::eFailure, "Can't read data for client socket");
 
-			this->m_handleRequest(std::move(clientSocket), std::string{(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()});
+			if (this->m_handleRequest(
+				std::move(clientSocket),
+				std::string{(char*)requestWithError->data(), (char*)requestWithError->data() + requestWithError->size()}
+			) != fp::Result::eSuccess)
+				return fp::ErrorStack::push(fp::Result::eFailure, "Can't handle request");
 		}
 
-		for (const auto &latch : m_latchs) {
-			if (!!latch)
-				(*latch)->wait();
-		}
 		return fp::Result::eSuccess;
 	}
 
 
-	auto Server::m_getLatch() noexcept -> std::shared_ptr<std::latch> {
-		for (auto &latch : m_latchs) {
-			if (!!latch) {
-				if ((*latch)->try_wait())
-					latch = std::nullopt;
-			}
-		}
-
-		auto it {std::ranges::find_if(m_latchs, [](auto &latch) {return !latch;})};
-		if (it == m_latchs.end())
-			it = m_latchs.insert(it, std::nullopt);
-		*it = std::make_shared<std::latch> (1);
-		return **it;
-	}
-
-
-	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> void {
+	auto Server::m_handleRequest(fp::Socket &&connection, std::string request) noexcept -> fp::Result {
 		using namespace fp::utils::literals;
-		std::shared_ptr<std::latch> latch {this->m_getLatch()};
 
-		std::thread([this](std::shared_ptr<std::latch> latch, fp::Socket &&connection, std::string &&requestString) noexcept {
+		auto pushTime {std::chrono::high_resolution_clock::now()};
+		fp::Job job {[this, clientSocket = std::move(connection), request = std::move(request), pushTime]() mutable noexcept -> fp::Result {
 			static const std::map<std::string_view, fp::HttpMethod> methodMap {
 				{"GET", fp::HttpMethod::eGet},
 				{"PUT", fp::HttpMethod::ePut},
@@ -133,44 +120,48 @@ namespace fp {
 				{"DELETE", fp::HttpMethod::eDelete}
 			};
 
-			fp::utils::Janitor _ {[&latch]() noexcept {latch->count_down();}};
+			std::println("Push -> run duration : {}", std::chrono::duration_cast<std::chrono::microseconds> (std::chrono::high_resolution_clock::now() - pushTime));
 			FP_REQUEST_HANDLING_BENCHMARK benchmark {};
 
-			fp::Socket clientSocket {std::move(connection)};
-			std::string request {std::move(requestString)};
+			//fp::Socket clientSocket {std::move(connection)};
+			//std::string request {std::move(requestString)};
 
 			auto split {std::views::split(request, ' ')};
 			std::string_view methodString {*split.begin()};
 			auto method {methodMap.find(methodString)};
 			if (method == methodMap.end()) {
-				if (clientSocket.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess) {
-					fp::ErrorStack::push("Can't send 400 after invalid method name");
-				}
-				return;
+				if (clientSocket.send(fp::serialize("HTTP/1.1 400 Bad Request"sv)->data) != fp::Result::eSuccess)
+					return fp::ErrorStack::push(fp::Result::eFailure, "Can't send 400 after invalid method name");
+				return fp::Result::eSuccess;
 			}
 
 			std::string_view routeString {*++split.begin()};
 			benchmark.setArgs(std::string{routeString});
 			auto route {std::ranges::find_if(m_endpoints, [&routeString](const auto &endpoint){return endpoint.first->isInstance(routeString);})};
 			if (route == m_endpoints.end()) {
-				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess) {
-					fp::ErrorStack::push("Can't send 404 after invalid route");
-					fp::ErrorStack::logAll();
-				}
-				return;
+				if (clientSocket.send(fp::serialize("HTTP/1.1 404 Not Found"sv)->data) != fp::Result::eSuccess)
+					return fp::ErrorStack::push(fp::Result::eFailure, "Can't send 404 after invalid route");
+				return fp::Result::eSuccess;
 			}
 
 			auto endpoint {route->second.find(method->second)};
 			if (endpoint == route->second.end()) {
-				if (clientSocket.send(fp::serialize("HTTP/1.1 405 Method Not Allowed"sv)->data) != fp::Result::eSuccess) {
-					fp::ErrorStack::push("Can't send 405 after invalid method");
-					fp::ErrorStack::logAll();
-				}
-				return;
+				if (clientSocket.send(fp::serialize("HTTP/1.1 405 Method Not Allowed"sv)->data) != fp::Result::eSuccess)
+					return fp::ErrorStack::push(fp::Result::eFailure, "Can't send 405 after invalid method");
+				return fp::Result::eSuccess;
 			}
 
 			endpoint->second->handleRequest(std::move(clientSocket), request);
-		}, latch, std::move(connection), std::move(request)).detach();
+			return fp::Result::eSuccess;
+		}};
+
+		fp::JobMetadata jobMetadata {};
+		jobMetadata.priority = fp::JobPriority::eMedium;
+
+		fp::JobPushingLockGuard pushingLock {};
+		if (fp::JobQueue::push(jobMetadata, std::move(job)) != fp::Result::eSuccess)
+			return fp::ErrorStack::push(fp::Result::eFailure, "Can't push job to job queue");
+		return fp::Result::eSuccess;
 	}
 
 
