@@ -8,6 +8,17 @@
 
 
 namespace fp::utils {
+	/*
+	 * @brief A class used to represent any typed value
+	 * @warning Use only in concept and template, as it is not defined for
+	 *          runtime use
+	 * */
+	struct AnyInitializer {
+		template <typename T>
+		operator T() const noexcept;
+	};
+
+
 	namespace __internals {
 		template <typename T>
 		struct FunctionTraitsBase;

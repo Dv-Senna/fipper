@@ -13,6 +13,7 @@
 #include <fp/containers/stackBasedRollingQueue.hpp>
 #include <fp/jobScheduler.hpp>
 #include <fp/coroutines/promise.hpp>
+#include <fp/coroutines/awaiter.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -44,6 +45,47 @@ struct Country {
 };
 
 
+struct Task;
+
+struct Promise : fp::coroutines::PromiseBase<void> {
+	auto get_return_object() noexcept -> Task;
+	auto unhandled_exception() const noexcept -> void {}
+	auto initial_suspend() const noexcept -> std::suspend_never {return {};}
+	auto final_suspend() const noexcept -> std::suspend_never {return {};}
+};
+
+static_assert(fp::coroutines::IsNotYieldingPromise<Promise>);
+
+
+struct Task {
+	using promise_type = Promise;
+	using Handle = std::coroutine_handle<Promise>;
+
+	Task(Promise *promise) noexcept : m_handle {Handle::from_promise(*promise)} {}
+
+	Handle m_handle;
+};
+
+auto Promise::get_return_object() noexcept -> Task {return Task{this};}
+
+
+auto asyncProcess() -> fp::coroutines::AsyncAwaiter<int> {
+	return fp::coroutines::AsyncAwaiter<int> {[](fp::coroutines::AsyncAwaiter<int> &awaiter) noexcept{
+		std::thread{[&awaiter]() noexcept {
+			std::this_thread::sleep_for(1s);
+			awaiter.complete(12);
+		}}.detach();
+	}};
+}
+
+
+auto coroutine() noexcept -> Task {
+	std::println("Thread : {}", std::this_thread::get_id());
+	std::println("Return await : {}", co_await asyncProcess());
+	std::println("Thread : {}", std::this_thread::get_id());
+}
+
+
 int main() {
 	fp::utils::Janitor _ {[]() noexcept {
 		fp::ErrorStack::logAll();
@@ -52,6 +94,7 @@ int main() {
 	fp::Server server {};
 	if (server.create({.port = 1242}) != fp::Result::eSuccess)
 		return fp::ErrorStack::push(EXIT_FAILURE, "Can't create server");
+
 
 	server.get("/{name:not_empty}", [](const fp::Request<void, std::string> &request, fp::Response<std::string> &response) noexcept {
 		auto name {**request.getParam<std::string> ("name")};
@@ -85,6 +128,7 @@ int main() {
 
 	server.post("/api/data", [](const fp::Request<Country> &request, fp::Response<Person> &response) noexcept {
 		std::println("COUNTRY : {} ({})", request.body.name, request.body.id);
+		(void)coroutine();
 
 		response.body.name = "Albert";
 		response.body.surname = "Einstein";
