@@ -30,16 +30,19 @@ namespace fp {
 
 	template <typename Func>
 	concept IsHttpReturningEndpointCallback = fp::IsEndpointCallback<Func>
-		&& (std::same_as<std::invoke_result_t<
-				Func,
-				fp::utils::SanitizedFunctionParameter_t<Func, 0>,
-				fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
-			fp::HttpCode> || std::same_as<std::invoke_result_t<
-				Func,
-				fp::utils::SanitizedFunctionParameter_t<Func, 0>,
-				fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
-			fp::Async>
-		);
+		&& std::same_as<std::invoke_result_t<
+			Func,
+			fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+			fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
+		fp::HttpCode>;
+	
+	template <typename Func>
+	concept IsHttpCoroutineEndpointCallback = fp::IsEndpointCallback<Func>
+		&& std::same_as<std::invoke_result_t<
+			Func,
+			fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+			fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
+		fp::Async>;
 
 
 	class EndpointBase {

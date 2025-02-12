@@ -25,8 +25,7 @@ namespace fp::coroutines {
 			constexpr auto initial_suspend() const noexcept -> std::suspend_never {return {};}
 			constexpr auto final_suspend() const noexcept -> std::suspend_never {return {};}
 
-			constexpr auto await_transform(EndpointTask &&task) const noexcept -> EndpointAwaiter;
-			constexpr auto await_transform(fp::HttpCode code) const noexcept -> Awaiter;
+			constexpr auto await_transform(EndpointTask &task) const noexcept -> EndpointAwaiter;
 	};
 
 	static_assert(fp::coroutines::IsNotYieldingPromise<WrapperPromise>);
@@ -146,14 +145,15 @@ namespace fp::coroutines {
 
 	class EndpointAwaiter {
 		public:
-			EndpointAwaiter(EndpointTask &&task) noexcept;
+			EndpointAwaiter(EndpointTask &task) noexcept;
 
 			constexpr auto await_ready() const noexcept -> bool {return false;}
 			constexpr auto await_suspend(WrapperTask::Handle handle) noexcept -> void;
-			constexpr auto await_resume() noexcept -> fp::HttpCode;
+			//constexpr auto await_resume() noexcept -> fp::HttpCode;
+			constexpr auto await_resume() noexcept -> void;
 
 		private:
-			EndpointTask m_task;
+			EndpointTask &m_task;
 			WrapperTask::Handle m_wrapperHandle;
 	};
 

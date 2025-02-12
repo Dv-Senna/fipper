@@ -2,18 +2,15 @@
 
 #include "fp/coroutines/async.hpp"
 
+#include <print>
+
 #include "fp/jobScheduler.hpp"
 
 
 namespace fp::coroutines {
-	constexpr auto WrapperPromise::await_transform(EndpointTask &&task) const noexcept -> EndpointAwaiter {
-		return EndpointAwaiter{task.getHandle()};
+	constexpr auto WrapperPromise::await_transform(EndpointTask &task) const noexcept -> EndpointAwaiter {
+		return EndpointAwaiter{task};
 	}
-
-	constexpr auto WrapperPromise::await_transform(fp::HttpCode code) const noexcept -> Awaiter {
-		return Awaiter{code};
-	}
-
 
 
 	template <IsAsyncAwaiterType T>
@@ -58,8 +55,8 @@ namespace fp::coroutines {
 	}
 
 
-	EndpointAwaiter::EndpointAwaiter(EndpointTask &&task) noexcept :
-		m_task {std::move(task)},
+	EndpointAwaiter::EndpointAwaiter(EndpointTask &task) noexcept :
+		m_task {task},
 		m_wrapperHandle {}
 	{
 
@@ -70,13 +67,8 @@ namespace fp::coroutines {
 		m_task.getHandle().promise().getAwaiterCallback()(m_wrapperHandle);
 	}
 
-	constexpr auto EndpointAwaiter::await_resume() noexcept -> fp::HttpCode {
+	constexpr auto EndpointAwaiter::await_resume() noexcept -> void {
 		m_task.resume();
-		while (!m_task.isDone()) {
-			m_task.getHandle().promise().getAwaiterCallback()(m_wrapperHandle);
-			m_task.resume();
-		}
-		return m_task.getValue();
 	}
 
 } // namespace fp::coroutines

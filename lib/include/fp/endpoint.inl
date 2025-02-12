@@ -62,7 +62,13 @@ namespace fp {
 		Response response {};
 		fp::HttpCode code {fp::HttpCode::e200};
 		if constexpr (fp::IsHttpReturningEndpointCallback<Func>)
-			code = co_await this->m_callback(request, response);
+			code = this->m_callback(request, response);
+		else if constexpr (fp::IsHttpCoroutineEndpointCallback<Func>) {
+			auto task {this->m_callback(request, response)};
+			while (!task.isDone())
+				co_await task;
+			code = task.getValue();
+		}
 		else
 			this->m_callback(request, response);
 		response.serialize();

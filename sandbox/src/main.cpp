@@ -50,7 +50,6 @@ struct Country {
 auto asyncProcess() -> fp::coroutines::AsyncAwaiter<int> {
 	return fp::coroutines::AsyncAwaiter<int> {[](fp::coroutines::AsyncAwaiter<int> &awaiter) noexcept{
 		std::thread{[&awaiter]() noexcept {
-			std::this_thread::sleep_for(1s);
 			awaiter.complete(12);
 		}}.detach();
 	}};
@@ -100,7 +99,8 @@ int main() {
 	server.post("/api/data", [](const fp::Request<Country> &request, fp::Response<Person> &response) noexcept -> fp::Async {
 		std::println("COUNTRY : {} ({})", request.body.name, request.body.id);
 
-		std::println("Result of async process : {}", co_await asyncProcess());
+		for (std::size_t i {0}; i < 10; ++i)
+			std::println("Result of async process {} : {}", i, co_await asyncProcess());
 
 		response.body.name = "Albert";
 		response.body.surname = "Einstein";
