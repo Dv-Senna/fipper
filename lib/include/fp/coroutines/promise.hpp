@@ -47,6 +47,8 @@ namespace fp::coroutines {
 				return std::move(m_value);
 			}
 
+			auto unhandled_exception() noexcept -> void {}
+
 		protected:
 			T m_value;
 	};
@@ -56,6 +58,7 @@ namespace fp::coroutines {
 	class PromiseBase<void> {
 		public:
 			auto return_void() noexcept -> void {}
+			auto unhandled_exception() noexcept -> void {}
 	};
 
 

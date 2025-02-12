@@ -2,6 +2,7 @@
 
 #include <string_view>
 
+#include "fp/coroutines/async.hpp"
 #include "fp/httpCode.hpp"
 #include "fp/httpMethod.hpp"
 #include "fp/request.hpp"
@@ -15,7 +16,10 @@ namespace fp {
 	concept IsEndpointCallbackWithReqRes = fp::IsRequest<Request>
 		&& fp::IsResponse<Response>
 		&& std::is_nothrow_invocable_v<Func, Request, Response&>
-		&& (std::same_as<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode> || std::is_void_v<std::invoke_result_t<Func, Request, Response&>>);
+		&& (std::is_same_v<std::invoke_result_t<Func, Request, Response&>, fp::HttpCode>
+			|| std::is_void_v<std::invoke_result_t<Func, Request, Response&>>
+			|| std::is_same_v<std::invoke_result_t<Func, Request, Response&>, fp::Async>
+		);
 
 	template <typename Func>
 	concept IsEndpointCallback = fp::IsEndpointCallbackWithReqRes<
@@ -26,11 +30,16 @@ namespace fp {
 
 	template <typename Func>
 	concept IsHttpReturningEndpointCallback = fp::IsEndpointCallback<Func>
-		&& std::same_as<std::invoke_result_t<
-			Func,
-			fp::utils::SanitizedFunctionParameter_t<Func, 0>,
-			fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
-		fp::HttpCode>;
+		&& (std::same_as<std::invoke_result_t<
+				Func,
+				fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+				fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
+			fp::HttpCode> || std::same_as<std::invoke_result_t<
+				Func,
+				fp::utils::SanitizedFunctionParameter_t<Func, 0>,
+				fp::utils::SanitizedFunctionParameter_t<Func, 1>&>,
+			fp::Async>
+		);
 
 
 	class EndpointBase {
@@ -39,7 +48,7 @@ namespace fp {
 			constexpr EndpointBase(fp::HttpMethod method) noexcept : m_method {method} {}
 			virtual ~EndpointBase() = default;
 
-			virtual auto handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> void = 0;
+			virtual auto handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> fp::coroutines::WrapperTask = 0;
 
 		protected:
 			fp::HttpMethod m_method;
@@ -57,7 +66,7 @@ namespace fp {
 			constexpr Endpoint(fp::HttpMethod method, Route route, Func &&callback) noexcept;
 			~Endpoint() override = default;
 
-			auto handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> void override;
+			auto handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> fp::coroutines::WrapperTask override;
 
 
 		private:

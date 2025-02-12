@@ -5,7 +5,10 @@
 #include <format>
 
 #include "fp/errorStack.hpp"
+#include "fp/utils/benchmark.hpp"
 
+
+#define FP_REQUEST_HANDLING_BENCHMARK fp::utils::Benchmark<"request_handling"_hash, std::string>
 
 namespace fp {
 	template <fp::IsEndpointCallback Func>
@@ -19,11 +22,14 @@ namespace fp {
 
 
 	template <fp::IsEndpointCallback Func>
-	auto Endpoint<Func>::handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> void {
+	auto Endpoint<Func>::handleRequest(fp::Socket &&connection, std::string_view requestString) const noexcept -> fp::coroutines::WrapperTask {
+		using namespace fp::utils::literals;
+		FP_REQUEST_HANDLING_BENCHMARK benchmark {};
 		fp::Socket clientConnection {std::move(connection)};
 
 		auto split {std::views::split(requestString, ' ')};
 		std::string_view requestRoute {*++split.begin()};
+		benchmark.setArgs(std::string{requestRoute});
 
 		Request request {};
 		if constexpr (Request::HAS_PARAMS) {
@@ -33,7 +39,7 @@ namespace fp {
 					fp::ErrorStack::push("Can't send response of invalid parameter of route");
 					fp::ErrorStack::logAll();
 				}
-				return;
+				co_return;
 			}
 			request.setParamNames(m_route.getParamNames());
 			request.markRuntimeReady();
@@ -48,7 +54,7 @@ namespace fp {
 					fp::ErrorStack::push("Can't send response of invalid request body of route");
 					fp::ErrorStack::logAll();
 				}
-				return;
+				co_return;
 			}
 		}
 
@@ -56,7 +62,7 @@ namespace fp {
 		Response response {};
 		fp::HttpCode code {fp::HttpCode::e200};
 		if constexpr (fp::IsHttpReturningEndpointCallback<Func>)
-			code = this->m_callback(request, response);
+			code = co_await this->m_callback(request, response);
 		else
 			this->m_callback(request, response);
 		response.serialize();
@@ -82,3 +88,5 @@ namespace fp {
 	}
 
 } // namespace fp
+
+#undef FP_REQUEST_HANDLING_BENCHMARK

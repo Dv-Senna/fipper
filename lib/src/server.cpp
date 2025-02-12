@@ -12,8 +12,8 @@
 #include "fp/utils/benchmark.hpp"
 
 
-#define FP_REQUEST_DISPATCHING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash>
-#define FP_REQUEST_HANDLING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash, std::string>
+#define FP_REQUEST_DISPATCHING_BENCHMARK fp::utils::Benchmark<"request_dispatching"_hash, std::string>
+#define FP_REQUEST_HANDLING_BENCHMARK fp::utils::Benchmark<"request_handling"_hash, std::string>
 
 #ifndef FP_BENCHMARK_ENABLED
 namespace fp::utils {
@@ -50,12 +50,12 @@ namespace fp {
 		using namespace fp::utils::literals;
 		using namespace std::literals;
 
-		FP_REQUEST_DISPATCHING_BENCHMARK::setCallback([](std::chrono::microseconds duration) {
+		FP_REQUEST_DISPATCHING_BENCHMARK::setCallback([](std::chrono::microseconds duration, const std::string &route) {
 			static std::mutex mutex {};
 			static std::ofstream csv {"benchmarks/request_dispatching.csv"};
 
 			std::lock_guard _ {mutex};
-			csv << duration.count() << std::endl;
+			csv << std::quoted(route) << "," << duration.count() << std::endl;
 		});
 
 		FP_REQUEST_HANDLING_BENCHMARK::setCallback([](std::chrono::microseconds duration, const std::string &route) {
@@ -84,7 +84,6 @@ namespace fp {
 			}
 
 			fp::Socket &clientSocket {*clientSocketWithError};
-			FP_REQUEST_DISPATCHING_BENCHMARK _ {};
 
 			auto hasDataToRecieveWithError {clientSocket.hasDataToRecieve(1000ms)};
 			if (!hasDataToRecieveWithError)
@@ -119,7 +118,7 @@ namespace fp {
 				{"DELETE", fp::HttpMethod::eDelete}
 			};
 
-			FP_REQUEST_HANDLING_BENCHMARK benchmark {};
+			FP_REQUEST_DISPATCHING_BENCHMARK benchmark {};
 
 			auto split {std::views::split(request, ' ')};
 			std::string_view methodString {*split.begin()};

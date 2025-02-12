@@ -14,6 +14,7 @@
 #include <fp/jobScheduler.hpp>
 #include <fp/coroutines/promise.hpp>
 #include <fp/coroutines/awaiter.hpp>
+#include <fp/coroutines/async.hpp>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -45,29 +46,6 @@ struct Country {
 };
 
 
-struct Task;
-
-struct Promise : fp::coroutines::PromiseBase<void> {
-	auto get_return_object() noexcept -> Task;
-	auto unhandled_exception() const noexcept -> void {}
-	auto initial_suspend() const noexcept -> std::suspend_never {return {};}
-	auto final_suspend() const noexcept -> std::suspend_never {return {};}
-};
-
-static_assert(fp::coroutines::IsNotYieldingPromise<Promise>);
-
-
-struct Task {
-	using promise_type = Promise;
-	using Handle = std::coroutine_handle<Promise>;
-
-	Task(Promise *promise) noexcept : m_handle {Handle::from_promise(*promise)} {}
-
-	Handle m_handle;
-};
-
-auto Promise::get_return_object() noexcept -> Task {return Task{this};}
-
 
 auto asyncProcess() -> fp::coroutines::AsyncAwaiter<int> {
 	return fp::coroutines::AsyncAwaiter<int> {[](fp::coroutines::AsyncAwaiter<int> &awaiter) noexcept{
@@ -76,13 +54,6 @@ auto asyncProcess() -> fp::coroutines::AsyncAwaiter<int> {
 			awaiter.complete(12);
 		}}.detach();
 	}};
-}
-
-
-auto coroutine() noexcept -> Task {
-	std::println("Thread : {}", std::this_thread::get_id());
-	std::println("Return await : {}", co_await asyncProcess());
-	std::println("Thread : {}", std::this_thread::get_id());
 }
 
 
@@ -126,9 +97,10 @@ int main() {
 		}).then((res)=>res.json()).then((body)=>console.log(body))";
 	});
 
-	server.post("/api/data", [](const fp::Request<Country> &request, fp::Response<Person> &response) noexcept {
+	server.post("/api/data", [](const fp::Request<Country> &request, fp::Response<Person> &response) noexcept -> fp::Async {
 		std::println("COUNTRY : {} ({})", request.body.name, request.body.id);
-		(void)coroutine();
+
+		std::println("Result of async process : {}", co_await asyncProcess());
 
 		response.body.name = "Albert";
 		response.body.surname = "Einstein";
@@ -138,6 +110,7 @@ int main() {
 		response.body.address.postalCode = 3000;
 		response.body.address.street = "Kramgasse";
 		response.body.address.number = 49;
+		co_return fp::HttpCode::e200;
 	});
 
 
